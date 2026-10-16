@@ -26,4 +26,4 @@ else
   exit 1
 fi
 
-exec "${COPIER[@]}" copy --trust "${VCS_REF_ARGS[@]}" "$@" "$BASELINE_DIR" "$DEST"
+exec "${COPIER[@]}" copy --trust ${VCS_REF_ARGS[@]+"${VCS_REF_ARGS[@]}"} "$@" "$BASELINE_DIR" "$DEST"
