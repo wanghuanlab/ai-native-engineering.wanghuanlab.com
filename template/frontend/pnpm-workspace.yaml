@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - packages/*
+
+# 只允许下列依赖执行安装脚本（pnpm 默认拦截，防范供应链攻击）
+allowBuilds:
+  esbuild: true

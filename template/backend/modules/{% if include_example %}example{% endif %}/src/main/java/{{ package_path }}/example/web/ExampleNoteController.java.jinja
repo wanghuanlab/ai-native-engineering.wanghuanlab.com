@@ -1,0 +1,57 @@
+package {{ package_name }}.example.web;
+
+import {{ package_name }}.common.web.Ids;
+import {{ package_name }}.common.web.Pagination;
+import {{ package_name }}.example.domain.ExampleNote;
+import {{ package_name }}.example.service.ExampleNoteService;
+import {{ package_name }}.example.web.api.ExampleNotesApi;
+import {{ package_name }}.example.web.dto.ExampleNoteCreateRequestDto;
+import {{ package_name }}.example.web.dto.ExampleNoteDto;
+import {{ package_name }}.example.web.dto.ExampleNotePageDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+/** 实现由契约 contracts/openapi/example.yaml 生成的接口。这里只做参数转换和调用，不写业务分支。 */
+@RestController
+public class ExampleNoteController implements ExampleNotesApi {
+
+    private final ExampleNoteService service;
+    private final ExampleNoteWebMapper mapper;
+
+    public ExampleNoteController(ExampleNoteService service, ExampleNoteWebMapper mapper) {
+        this.service = service;
+        this.mapper = mapper;
+    }
+
+    @Override
+    public ResponseEntity<ExampleNotePageDto> listExampleNotes(Integer page, Integer size, String keyword) {
+        Page<ExampleNote> result =
+                service.list(keyword, Pagination.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        ExampleNotePageDto body = new ExampleNotePageDto()
+                .items(result.map(mapper::toDto).getContent())
+                .total(result.getTotalElements())
+                .page(result.getNumber() + 1)
+                .size(result.getSize());
+        return ResponseEntity.ok(body);
+    }
+
+    @Override
+    public ResponseEntity<ExampleNoteDto> createExampleNote(ExampleNoteCreateRequestDto request) {
+        ExampleNote created = service.create(request.getTitle(), request.getContent());
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
+    }
+
+    @Override
+    public ResponseEntity<ExampleNoteDto> getExampleNote(String id) {
+        return ResponseEntity.ok(mapper.toDto(service.get(Ids.parse(id))));
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteExampleNote(String id) {
+        service.delete(Ids.parse(id));
+        return ResponseEntity.noContent().build();
+    }
+}

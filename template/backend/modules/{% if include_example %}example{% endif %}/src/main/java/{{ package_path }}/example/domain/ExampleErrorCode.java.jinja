@@ -1,0 +1,35 @@
+package {{ package_name }}.example.domain;
+
+import {{ package_name }}.common.error.ErrorCode;
+import org.springframework.http.HttpStatus;
+
+/** 示例模块错误码，号段 B99xx（号段登记在 docs/context/architecture.md）。 */
+public enum ExampleErrorCode implements ErrorCode {
+    NOTE_NOT_FOUND("B9901", "笔记不存在", HttpStatus.NOT_FOUND),
+    ALREADY_PUBLISHED("B9902", "笔记已发布，不能重复发布", HttpStatus.UNPROCESSABLE_CONTENT);
+
+    private final String code;
+    private final String message;
+    private final HttpStatus status;
+
+    ExampleErrorCode(String code, String message, HttpStatus status) {
+        this.code = code;
+        this.message = message;
+        this.status = status;
+    }
+
+    @Override
+    public String code() {
+        return code;
+    }
+
+    @Override
+    public String message() {
+        return message;
+    }
+
+    @Override
+    public HttpStatus status() {
+        return status;
+    }
+}

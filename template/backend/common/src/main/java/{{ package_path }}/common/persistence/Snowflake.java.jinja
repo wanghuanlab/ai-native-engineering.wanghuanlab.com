@@ -1,0 +1,53 @@
+package {{ package_name }}.common.persistence;
+
+import java.time.Instant;
+
+/**
+ * 雪花算法：41 位毫秒时间戳 + 10 位节点号 + 12 位序列号。
+ * 节点号取环境变量 APP_WORKER_ID（0~1023），多实例部署时每个实例必须不同。
+ */
+public final class Snowflake {
+
+    private static final long EPOCH = Instant.parse("2026-01-01T00:00:00Z").toEpochMilli();
+    private static final long WORKER_BITS = 10L;
+    private static final long SEQUENCE_BITS = 12L;
+    private static final long MAX_WORKER = ~(-1L << WORKER_BITS);
+    private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
+    private static final long WORKER_ID = resolveWorkerId();
+
+    private static long lastTimestamp = -1L;
+    private static long sequence = 0L;
+
+    private Snowflake() {}
+
+    public static synchronized long nextId() {
+        long now = System.currentTimeMillis();
+        if (now < lastTimestamp) {
+            now = lastTimestamp;
+        }
+        if (now == lastTimestamp) {
+            sequence = (sequence + 1) & SEQUENCE_MASK;
+            if (sequence == 0) {
+                while (now <= lastTimestamp) {
+                    now = System.currentTimeMillis();
+                }
+            }
+        } else {
+            sequence = 0L;
+        }
+        lastTimestamp = now;
+        return ((now - EPOCH) << (WORKER_BITS + SEQUENCE_BITS)) | (WORKER_ID << SEQUENCE_BITS) | sequence;
+    }
+
+    private static long resolveWorkerId() {
+        String value = System.getenv("APP_WORKER_ID");
+        if (value == null || value.isBlank()) {
+            return 0L;
+        }
+        long id = Long.parseLong(value.trim());
+        if (id < 0 || id > MAX_WORKER) {
+            throw new IllegalStateException("APP_WORKER_ID 必须在 0~" + MAX_WORKER + " 之间");
+        }
+        return id;
+    }
+}

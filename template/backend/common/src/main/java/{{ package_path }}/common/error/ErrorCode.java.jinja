@@ -1,0 +1,21 @@
+package {{ package_name }}.common.error;
+
+import org.springframework.http.HttpStatus;
+
+/**
+ * 错误码。格式为 1 位来源 + 4 位数字：
+ *
+ * <ul>
+ *   <li>{@code A} 客户端问题（参数、认证、权限），{@code A0xxx}
+ *   <li>{@code B} 业务规则，{@code B<模块两位><序号两位>}，模块号段登记在 docs/context/architecture.md
+ *   <li>{@code C} 第三方或中间件
+ * </ul>
+ */
+public interface ErrorCode {
+
+    String code();
+
+    String message();
+
+    HttpStatus status();
+}

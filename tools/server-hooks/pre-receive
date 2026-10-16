@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# 裸 Git 服务器端钩子（可选）。安装到 <仓库>.git/hooks/pre-receive 并赋予执行权限。
+#
+# 强制以下规则（客户端钩子可被绕过，这里不能）：
+#   1. 只有技术负责人可以更新 main，且不能强制推送、不能删除 main
+#   2. 推到 main 的每个提交，提交说明必须包含 Refs: 行
+#   3. 已在 main 中存在的迁移脚本不能修改或删除
+#
+# 技术负责人名单由服务器管理员维护，不读取仓库内容（防止推送者给自己授权）：
+#   git --git-dir=<仓库>.git config hooks.techleads "wanghuan lisi"
+# 推送者身份取 $GL_USER（Gitolite）、$GITEA_PUSHER_NAME，否则取 SSH 登录用户 $USER。
+set -euo pipefail
+
+ZERO=0000000000000000000000000000000000000000
+PUSHER="${GL_USER:-${GITEA_PUSHER_NAME:-${USER:-unknown}}}"
+TECH_LEADS="$(git config hooks.techleads || true)"
+REFS_LINE='^Refs: ((REQ|BUG)-[0-9]{8}-[a-z0-9-]+|BASELINE-v[0-9.]+)'
+
+deny() {
+  echo "✗ 推送被拒绝：$*" >&2
+  exit 1
+}
+
+while read -r old new ref; do
+  [ "${ref}" = "refs/heads/main" ] || continue
+
+  [ "${new}" != "${ZERO}" ] || deny "不能删除 main"
+  if [ -n "${TECH_LEADS}" ]; then
+    case " ${TECH_LEADS} " in
+      *" ${PUSHER} "*) ;;
+      *) deny "${PUSHER} 不是技术负责人，不能推送 main。请推送 feat/<需求编号> 或 fix/<缺陷编号> 分支，由技术负责人合并" ;;
+    esac
+  fi
+
+  if [ "${old}" = "${ZERO}" ]; then
+    range="${new}"
+  else
+    git merge-base --is-ancestor "${old}" "${new}" || deny "main 不允许强制推送"
+    range="${old}..${new}"
+  fi
+
+  for commit in $(git rev-list --no-merges "${range}"); do
+    msg="$(git log -1 --format=%B "${commit}")"
+    case "$(echo "${msg}" | head -1)" in Revert* | Merge*) continue ;; esac
+    echo "${msg}" | grep -Eq "${REFS_LINE}" || deny "提交 ${commit:0:10} 缺少 Refs: 行"
+  done
+
+  if [ "${old}" != "${ZERO}" ]; then
+    changed="$(git diff --name-status --no-renames "${old}" "${new}" -- db/migration | awk '$1 != "A" {print $2}' | grep '\.sql$' || true)"
+    [ -z "${changed}" ] || deny "已合并的迁移脚本不能修改或删除：${changed//$'\n'/, }"
+  fi
+done
+exit 0

@@ -1,0 +1,20 @@
+package {{ package_name }}.common.web;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+/** 分页参数约定：页码从 1 开始，默认每页 20 条，每页最多 200 条。 */
+public final class Pagination {
+
+    public static final int DEFAULT_SIZE = 20;
+    public static final int MAX_SIZE = 200;
+
+    private Pagination() {}
+
+    public static Pageable of(Integer page, Integer size, Sort sort) {
+        int safePage = page == null || page < 1 ? 1 : page;
+        int safeSize = size == null || size < 1 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
+        return PageRequest.of(safePage - 1, safeSize, sort);
+    }
+}

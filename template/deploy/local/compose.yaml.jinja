@@ -1,0 +1,18 @@
+# 本地开发数据库：docker compose -f deploy/local/compose.yaml up -d
+# 后端默认连接 localhost:5432/{{ project_code }}，用户名和密码均为 {{ project_code }}（仅限本地）
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: {{ project_code }}-postgres
+    environment:
+      POSTGRES_DB: {{ project_code }}
+      POSTGRES_USER: {{ project_code }}
+      POSTGRES_PASSWORD: {{ project_code }}
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

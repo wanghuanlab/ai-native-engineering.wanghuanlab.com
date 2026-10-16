@@ -1,0 +1,14 @@
+# 构建上下文为仓库根目录，先执行 cd backend && ./mvnw -B package -DskipTests
+# 多架构：docker buildx build --platform linux/amd64,linux/arm64 -f deploy/docker/backend.Dockerfile .
+FROM eclipse-temurin:21-jre
+
+RUN groupadd --system app && useradd --system --gid app app
+WORKDIR /app
+COPY backend/app/target/{{ project_code }}-app.jar app.jar
+USER app
+
+ENV TZ=Asia/Shanghai \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75" \
+    SPRING_PROFILES_ACTIVE=prod
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

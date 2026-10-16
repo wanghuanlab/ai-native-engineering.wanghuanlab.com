@@ -1,0 +1,9 @@
+/**
+ * 项目内公共组件：错误码与异常处理、持久化基类、ID 生成、请求追踪、分页工具。
+ *
+ * <p>开放模块：其他业务模块可以直接依赖本包及其子包。这里只放与业务无关的技术组件。
+ */
+@ApplicationModule(type = ApplicationModule.Type.OPEN)
+package {{ package_name }}.common;
+
+import org.springframework.modulith.ApplicationModule;

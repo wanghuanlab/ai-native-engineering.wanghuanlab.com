@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: 公共组件
+  version: 1.0.0
+  description: 所有模块共用的结构。只能新增，不能修改已有字段。
+paths: {}
+components:
+  schemas:
+    Id:
+      type: string
+      pattern: '^[0-9]{1,19}$'
+      description: 64 位主键，以字符串传输，防止前端精度丢失
+      example: '1234567890123456789'
+    ProblemDetail:
+      type: object
+      description: 统一错误响应（RFC 9457），附加错误码与追踪号
+      required: [status, title, code]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+          description: 错误码对应的简短说明
+        status:
+          type: integer
+        detail:
+          type: string
+          description: 面向用户的具体说明
+        instance:
+          type: string
+        code:
+          type: string
+          description: 错误码，如 A0400、B1001
+        traceId:
+          type: string
+          description: 请求追踪号，排查问题时提供给研发
+        errors:
+          type: array
+          description: 字段级校验错误
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: 页码，从 1 开始
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Size:
+      name: size
+      in: query
+      description: 每页条数，最大 200
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+  responses:
+    BadRequest:
+      description: 请求参数不正确
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: 资源不存在
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

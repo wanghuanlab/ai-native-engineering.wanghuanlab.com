@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# 提交说明格式：<类型>(<模块>): <中文描述>，正文包含 Refs: <需求或缺陷编号>
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+python3 scripts/lib/checks.py commit-msg "$1"

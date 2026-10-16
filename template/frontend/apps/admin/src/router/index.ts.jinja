@@ -1,0 +1,31 @@
+import BasicLayout from '@/layouts/BasicLayout.vue'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+
+/** 业务路由按模块追加到 children 中，meta.title 用于菜单与页面标题 */
+export const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    component: BasicLayout,
+    children: [
+      {
+        path: '',
+        name: 'home',
+        component: () => import('@/views/HomeView.vue'),
+        meta: { title: '首页' },
+      },
+{%- if include_example %}
+      {
+        path: 'example/notes',
+        name: 'example-notes',
+        component: () => import('@/views/example/ExampleNoteListView.vue'),
+        meta: { title: '示例笔记' },
+      },
+{%- endif %}
+    ],
+  },
+]
+
+export default createRouter({
+  history: createWebHistory(),
+  routes,
+})

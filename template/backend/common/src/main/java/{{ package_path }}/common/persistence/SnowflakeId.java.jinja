@@ -1,0 +1,13 @@
+package {{ package_name }}.common.persistence;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.hibernate.annotations.IdGeneratorType;
+
+/** 应用侧生成趋势递增的 64 位主键。主键在接口契约中必须声明为字符串，避免前端精度丢失。 */
+@IdGeneratorType(SnowflakeIdGenerator.class)
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.METHOD})
+public @interface SnowflakeId {}

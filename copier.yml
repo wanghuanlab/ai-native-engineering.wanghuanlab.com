@@ -1,0 +1,120 @@
+# ai-native-engineering 项目模板配置
+# 创建项目：bin/new-project.sh <目标目录>
+# 同步升级：在项目内执行 scripts/sync-baseline.sh <基线版本标签>
+
+_min_copier_version: "9.4.0"
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .baseline/copier-answers.yml
+_envops:
+  keep_trailing_newline: true
+
+_message_after_copy: |
+  项目 {{ project_name }}（{{ project_code }}）已生成。
+  下一步：
+    cd {{ _copier_conf.dst_path }}
+    ./scripts/setup.sh
+    ./scripts/verify.sh quick
+    git add -A && git commit -m "chore(baseline): 初始化项目" -m "Refs: BASELINE-<基线版本>"
+  请先阅读 AGENTS.md 和 docs/context/collaboration.md。
+
+# 项目自有文件：只在创建时生成，同步基线时不覆盖
+_skip_if_exists:
+  - "backend/app/src/**"
+  - "backend/common/src/**"
+  - "backend/modules/**"
+  - "frontend/apps/**"
+  - "frontend/packages/api-client/src/http.ts"
+  - "contracts/**"
+  - "db/**"
+  - "deploy/**"
+  - "docs/requirements/**"
+  - "docs/specs/**"
+  - "docs/changes/**"
+  - "docs/context/**"
+  - "docs/adr/**"
+  - "docs/releases/**"
+  - ".ai/project/**"
+  - "README.md"
+
+_tasks:
+  - command: "[ -d .git ] || git init -q -b main"
+  - command: "chmod +x .githooks/* scripts/*.sh backend/mvnw"
+  - command: "python3 scripts/build-ai-config.py"
+  - command: "git config core.hooksPath .githooks"
+
+project_code:
+  type: str
+  help: 项目代号（小写英文字母开头，只含小写字母和数字，2~20 位），用于包名、构件名和镜像名，例如 park
+  validator: >-
+    {% if not (project_code | regex_search('^[a-z][a-z0-9]{1,19}$')) %}
+    项目代号必须是小写英文字母开头、只含小写字母和数字的 2~20 位字符串
+    {% endif %}
+
+project_name:
+  type: str
+  help: 项目中文名称，例如 智慧园区管理系统
+  validator: "{% if not project_name.strip() %}项目名称不能为空{% endif %}"
+
+package_root:
+  type: str
+  default: com.dsmeta
+  help: Java 包名前缀（最终包名为 <前缀>.<项目代号>）
+  validator: >-
+    {% if not (package_root | regex_search('^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*$')) %}
+    包名前缀格式不正确
+    {% endif %}
+
+tech_lead:
+  type: str
+  help: 项目技术负责人（TL）的 Git 用户名，多人用英文逗号分隔；只有他们可以合并主干
+  validator: "{% if not tech_lead.strip() %}必须指定至少一名技术负责人{% endif %}"
+
+security_level:
+  type: str
+  help: 项目密级（决定可使用的 AI 模型与工具）
+  choices:
+    普通（可使用部门批准的云端 AI 工具）: normal
+    受限（仅国内合规云服务或私有化模型）: restricted
+    涉密（仅私有化部署模型，代码不得离开内网）: classified
+  default: normal
+
+enable_xinchuang:
+  type: bool
+  default: false
+  help: 是否启用信创画像（国产数据库）
+
+xinchuang_db:
+  type: str
+  when: "{{ enable_xinchuang }}"
+  help: 信创数据库
+  choices:
+    达梦 DM8: dm
+    人大金仓 KingbaseES: kingbase
+  default: dm
+
+enable_screen:
+  type: bool
+  default: false
+  help: 是否启用大屏可视化画像（Three.js / Cesium 大屏应用）
+
+include_example:
+  type: bool
+  default: true
+  help: 是否包含示例模块 example（演示分层、契约、迁移和测试写法，确认理解后可删除）
+
+# ---- 计算变量（不提问） ----
+package_name:
+  type: str
+  default: "{{ package_root }}.{{ project_code }}"
+  when: false
+
+package_path:
+  type: str
+  default: "{{ (package_root ~ '.' ~ project_code) | replace('.', '/') }}"
+  when: false
+
+dialects:
+  type: str
+  default: "postgresql{% if enable_xinchuang %},{{ xinchuang_db }}{% endif %}"
+  when: false

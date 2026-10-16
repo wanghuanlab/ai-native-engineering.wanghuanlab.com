@@ -1,0 +1,21 @@
+-- 需求：示例模块（docs/specs/example-note/spec.md）
+-- 回退方式：DROP TABLE example_note;
+
+CREATE TABLE example_note (
+    id          BIGINT                   NOT NULL,
+    title       VARCHAR(64)              NOT NULL,
+    content     VARCHAR(2000),
+    status      VARCHAR(32)              NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by  BIGINT                   NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by  BIGINT                   NOT NULL,
+    version     INTEGER                  NOT NULL DEFAULT 0,
+    deleted     BOOLEAN                  NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_example_note PRIMARY KEY (id)
+);
+
+CREATE INDEX idx_example_note_created_at ON example_note (created_at);
+
+COMMENT ON TABLE example_note IS '示例笔记';
+COMMENT ON COLUMN example_note.status IS '状态：DRAFT-草稿，PUBLISHED-已发布';

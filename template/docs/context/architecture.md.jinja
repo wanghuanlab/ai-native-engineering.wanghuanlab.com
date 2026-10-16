@@ -1,0 +1,42 @@
+# 架构与模块划分：{{ project_name }}
+
+## 总体结构
+
+| 目录 | 内容 |
+| :--- | :--- |
+| `backend/app` | 启动入口、配置、集成测试、架构规则测试 |
+| `backend/common` | 公共能力：错误码与异常处理、分页、追踪编号、雪花 ID、审计字段、当前用户 |
+| `backend/modules/<模块>` | 业务模块，每个模块分为 `api`、`web`、`service`、`domain`、`infra` 五层 |
+| `contracts/openapi/<模块>.yaml` | 接口契约，前后端代码都由它生成 |
+| `db/migration/<方言>/` | 迁移脚本，各方言一一对应 |
+| `frontend/apps/admin` | 管理端 |
+{%- if enable_screen %}
+| `frontend/apps/screen` | 大屏（Three.js / Cesium） |
+{%- endif %}
+| `frontend/packages/api-client` | 由契约生成的接口客户端 |
+
+## 依赖规则（由 `ModularityTest` 和 `ArchitectureRulesTest` 强制）
+
+- 模块之间只能依赖对方的 `api` 包；不允许循环依赖。
+- `web` 层不访问仓储、不开事务；`domain` 层不依赖 `web`、`service`、`infra`。
+- 跨模块写操作通过对方 `api` 包中的接口完成；需要解耦时用 Spring 事件。
+
+## 模块清单与错误码号段
+
+错误码格式：`A` 开头为调用方错误，`B` 开头为系统或业务错误，`C` 开头为第三方服务错误。公共错误码见 `CommonErrorCode`；每个业务模块分配一个 `B<两位>xx` 号段，模块内递增。
+
+| 模块 | 中文名 | 错误码号段 | 职责 |
+| :--- | :--- | :--- | :--- |
+| `common` | 公共 | A04xx、B00xx、C00xx | 公共能力 |
+{%- if include_example %}
+| `example` | 示例 | B99xx | 示例笔记，演示各层写法；业务开发开始后可以删除 |
+{%- endif %}
+<!-- @module-table-end -->
+
+新模块用 `./scripts/new-module.sh <模块名> --title <中文名>` 创建，脚本会自动在上表登记并分配号段。
+{%- if include_example %}
+
+## 删除示例模块
+
+业务开发开始后可以删除示例，涉及：`backend/modules/example/`、`backend/pom.xml` 与 `backend/app/pom.xml` 中的登记、`backend/app/src/test/.../example/`、`contracts/openapi/example.yaml`、`db/migration/*/V202601010000__example_create_note.sql`、`docs/specs/example-note/`、`frontend/apps/admin/src/views/example/` 及路由、本表中的 `example` 行。删除迁移脚本只允许在项目首次发布前进行。
+{%- endif %}

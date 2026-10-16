@@ -1,0 +1,4 @@
+# 生产环境：数据库迁移不随应用启动执行，由运维使用 migrate 配置单独执行（见 docs/releases 中的部署手册）
+spring:
+  flyway:
+    enabled: false

@@ -1,0 +1,12 @@
+import HomeView from '@/views/HomeView.vue'
+import { mount } from '@vue/test-utils'
+import ElementPlus from 'element-plus'
+import { describe, expect, it } from 'vitest'
+
+describe('HomeView', () => {
+  it('展示项目名称', () => {
+    const wrapper = mount(HomeView, { global: { plugins: [ElementPlus] } })
+
+    expect(wrapper.text()).toContain('{{ project_name }}')
+  })
+})

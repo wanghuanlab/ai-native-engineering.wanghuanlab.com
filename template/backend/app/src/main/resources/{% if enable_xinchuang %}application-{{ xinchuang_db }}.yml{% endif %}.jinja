@@ -1,0 +1,13 @@
+# 信创数据库配置：--spring.profiles.active={{ xinchuang_db }}
+# 注意：驱动版本、Hibernate 方言、Flyway 支持情况以第 0 阶段信创验证结果为准，验证通过前不得用于交付。
+spring:
+  datasource:
+{%- if xinchuang_db == 'dm' %}
+    url: ${DB_URL:jdbc:dm://localhost:5236}
+    driver-class-name: dm.jdbc.driver.DmDriver
+{%- else %}
+    url: ${DB_URL:jdbc:kingbase8://localhost:54321/{{ project_code }}}
+    driver-class-name: com.kingbase8.Driver
+{%- endif %}
+  flyway:
+    locations: classpath:db/migration/{{ xinchuang_db }}

@@ -1,0 +1,71 @@
+package {{ package_name }};
+
+import static com.tngtech.archunit.core.domain.JavaCall.Predicates.target;
+import static com.tngtech.archunit.core.domain.properties.HasName.Predicates.name;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
+
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+/** 分层与编码红线。规则按包名模式编写，新增模块无需修改。 */
+@AnalyzeClasses(packages = "{{ package_name }}", importOptions = ImportOption.DoNotIncludeTests.class)
+class ArchitectureRulesTest {
+
+    @ArchTest
+    static final ArchRule webMustNotUseRepositories = noClasses()
+            .that()
+            .resideInAPackage("..web..")
+            .should()
+            .dependOnClassesThat()
+            .areAssignableTo(Repository.class)
+            .because("Controller 必须通过 service 层访问数据");
+
+    @ArchTest
+    static final ArchRule webMustNotBeTransactional = noMethods()
+            .that()
+            .areDeclaredInClassesThat()
+            .resideInAPackage("..web..")
+            .should()
+            .beAnnotatedWith(Transactional.class)
+            .because("事务边界只在 service 层");
+
+    @ArchTest
+    static final ArchRule webClassesMustNotBeTransactional = noClasses()
+            .that()
+            .resideInAPackage("..web..")
+            .should()
+            .beAnnotatedWith(Transactional.class)
+            .because("事务边界只在 service 层");
+
+    @ArchTest
+    static final ArchRule domainMustNotDependOnOuterLayers = noClasses()
+            .that()
+            .resideInAPackage("..domain..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("..web..", "..service..", "..infra..")
+            .because("领域层不依赖外层");
+
+    @ArchTest
+    static final ArchRule noBeanUtilsCopy =
+            noClasses().should().callMethodWhere(target(name("copyProperties"))).because("禁止反射复制属性，使用 MapStruct");
+
+    @ArchTest
+    static final ArchRule noSystemOut = noClasses()
+            .should()
+            .accessField(System.class, "out")
+            .orShould()
+            .accessField(System.class, "err")
+            .because("使用日志框架输出");
+
+    @ArchTest
+    static final ArchRule noFieldInjection =
+            noFields().should().beAnnotatedWith(Autowired.class).because("使用构造器注入");
+}

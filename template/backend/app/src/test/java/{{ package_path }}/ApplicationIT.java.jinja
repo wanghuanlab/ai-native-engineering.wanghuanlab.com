@@ -1,0 +1,17 @@
+package {{ package_name }};
+
+import {{ package_name }}.support.PostgresContainerConfig;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+
+/** 在真实数据库上执行全部迁移，并校验所有实体与表结构一致（ddl-auto=validate）。 */
+@SpringBootTest
+@Import(PostgresContainerConfig.class)
+class ApplicationIT {
+
+    @Test
+    void migrationsApplyAndEntitiesMatchSchema() {
+        // 上下文能启动即说明迁移成功、实体与表结构一致
+    }
+}

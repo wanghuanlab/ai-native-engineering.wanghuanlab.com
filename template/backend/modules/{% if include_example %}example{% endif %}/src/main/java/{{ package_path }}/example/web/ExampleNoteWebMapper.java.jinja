@@ -1,0 +1,12 @@
+package {{ package_name }}.example.web;
+
+import {{ package_name }}.example.domain.ExampleNote;
+import {{ package_name }}.example.web.dto.ExampleNoteDto;
+import org.mapstruct.Mapper;
+
+/** 实体与接口 DTO 的转换。主键 Long 与契约中的字符串由 MapStruct 自动转换。 */
+@Mapper
+public interface ExampleNoteWebMapper {
+
+    ExampleNoteDto toDto(ExampleNote note);
+}

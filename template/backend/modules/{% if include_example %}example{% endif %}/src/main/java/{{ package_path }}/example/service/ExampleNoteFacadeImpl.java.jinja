@@ -1,0 +1,24 @@
+package {{ package_name }}.example.service;
+
+import {{ package_name }}.example.api.ExampleNoteFacade;
+import {{ package_name }}.example.api.ExampleNoteSummary;
+import {{ package_name }}.example.domain.ExampleNoteRepository;
+import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional(readOnly = true)
+class ExampleNoteFacadeImpl implements ExampleNoteFacade {
+
+    private final ExampleNoteRepository repository;
+
+    ExampleNoteFacadeImpl(ExampleNoteRepository repository) {
+        this.repository = repository;
+    }
+
+    @Override
+    public Optional<ExampleNoteSummary> findSummary(long id) {
+        return repository.findById(id).map(note -> new ExampleNoteSummary(note.getId(), note.getTitle()));
+    }
+}

@@ -1,0 +1,129 @@
+openapi: 3.0.3
+info:
+  title: 示例模块
+  version: 1.0.0
+  description: 演示契约写法。对应规格 docs/specs/example-note/spec.md。
+servers:
+  - url: /
+tags:
+  - name: ExampleNotes
+    description: 示例笔记
+paths:
+  /api/example/notes:
+    get:
+      tags: [ExampleNotes]
+      operationId: listExampleNotes
+      summary: 分页查询示例笔记
+      parameters:
+        - $ref: './common.yaml#/components/parameters/Page'
+        - $ref: './common.yaml#/components/parameters/Size'
+        - name: keyword
+          in: query
+          description: 按标题模糊查询
+          schema:
+            type: string
+            maxLength: 64
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExampleNotePage'
+        '400':
+          $ref: './common.yaml#/components/responses/BadRequest'
+    post:
+      tags: [ExampleNotes]
+      operationId: createExampleNote
+      summary: 新建示例笔记
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExampleNoteCreateRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExampleNote'
+        '400':
+          $ref: './common.yaml#/components/responses/BadRequest'
+  /api/example/notes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: './common.yaml#/components/schemas/Id'
+    get:
+      tags: [ExampleNotes]
+      operationId: getExampleNote
+      summary: 查询示例笔记详情
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExampleNote'
+        '404':
+          $ref: './common.yaml#/components/responses/NotFound'
+    delete:
+      tags: [ExampleNotes]
+      operationId: deleteExampleNote
+      summary: 删除示例笔记（逻辑删除）
+      responses:
+        '204':
+          description: 删除成功
+        '404':
+          $ref: './common.yaml#/components/responses/NotFound'
+components:
+  schemas:
+    ExampleNoteStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED]
+      description: DRAFT-草稿，PUBLISHED-已发布
+    ExampleNoteCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 64
+        content:
+          type: string
+          maxLength: 2000
+    ExampleNote:
+      type: object
+      required: [id, title, status, createdAt]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        title:
+          type: string
+        content:
+          type: string
+        status:
+          $ref: '#/components/schemas/ExampleNoteStatus'
+        createdAt:
+          type: string
+          format: date-time
+    ExampleNotePage:
+      type: object
+      required: [items, total, page, size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExampleNote'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        size:
+          type: integer

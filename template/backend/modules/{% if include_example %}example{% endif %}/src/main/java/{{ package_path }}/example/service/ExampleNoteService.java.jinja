@@ -1,0 +1,42 @@
+package {{ package_name }}.example.service;
+
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.example.domain.ExampleErrorCode;
+import {{ package_name }}.example.domain.ExampleNote;
+import {{ package_name }}.example.domain.ExampleNoteRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional(readOnly = true)
+public class ExampleNoteService {
+
+    private final ExampleNoteRepository repository;
+
+    public ExampleNoteService(ExampleNoteRepository repository) {
+        this.repository = repository;
+    }
+
+    public Page<ExampleNote> list(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isBlank()) {
+            return repository.findAll(pageable);
+        }
+        return repository.findByTitleContaining(keyword.trim(), pageable);
+    }
+
+    public ExampleNote get(long id) {
+        return repository.findById(id).orElseThrow(() -> new BizException(ExampleErrorCode.NOTE_NOT_FOUND));
+    }
+
+    @Transactional
+    public ExampleNote create(String title, String content) {
+        return repository.save(ExampleNote.draft(title, content));
+    }
+
+    @Transactional
+    public void delete(long id) {
+        repository.delete(get(id));
+    }
+}

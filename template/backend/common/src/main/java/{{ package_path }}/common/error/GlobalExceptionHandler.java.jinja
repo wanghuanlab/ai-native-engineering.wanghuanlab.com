@@ -1,0 +1,86 @@
+package {{ package_name }}.common.error;
+
+import {{ package_name }}.common.web.TraceIdFilter;
+import java.util.List;
+import java.util.Map;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+/**
+ * 统一错误响应：RFC 9457 Problem Details，并附加 {@code code}（错误码）和 {@code traceId}（追踪号）。
+ * 成功响应直接返回契约中定义的数据结构，不再包一层信封。
+ */
+@RestControllerAdvice
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(BizException.class)
+    public ResponseEntity<ProblemDetail> handleBiz(BizException ex) {
+        return build(ex.errorCode(), ex.getMessage(), null);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ProblemDetail> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        return build(CommonErrorCode.CONCURRENT_MODIFICATION, null, null);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex) {
+        log.error("未处理的异常", ex);
+        return build(CommonErrorCode.INTERNAL_ERROR, null, null);
+    }
+
+    @Override
+    protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        List<Map<String, String>> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> Map.of(
+                        "field", e.getField(), "message", e.getDefaultMessage() == null ? "" : e.getDefaultMessage()))
+                .toList();
+        ResponseEntity<ProblemDetail> response = build(CommonErrorCode.BAD_REQUEST, null, errors);
+        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+    }
+
+    @Override
+    protected @Nullable ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+        if (body instanceof ProblemDetail problem) {
+            decorate(
+                    problem,
+                    statusCode.is4xxClientError() ? CommonErrorCode.BAD_REQUEST : CommonErrorCode.INTERNAL_ERROR);
+        }
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    }
+
+    private ResponseEntity<ProblemDetail> build(ErrorCode code, @Nullable String detail, @Nullable Object errors) {
+        HttpStatus status = code.status();
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail == null ? code.message() : detail);
+        problem.setTitle(code.message());
+        decorate(problem, code);
+        if (errors != null) {
+            problem.setProperty("errors", errors);
+        }
+        return ResponseEntity.status(status).body(problem);
+    }
+
+    private static void decorate(ProblemDetail problem, ErrorCode code) {
+        if (problem.getProperties() == null || !problem.getProperties().containsKey("code")) {
+            problem.setProperty("code", code.code());
+        }
+        problem.setProperty("traceId", MDC.get(TraceIdFilter.MDC_KEY));
+    }
+}

@@ -1,0 +1,26 @@
+package {{ package_name }}.common.security;
+
+/**
+ * 当前操作人。认证接入后由认证过滤器在请求开始时调用 {@link #set(Long)}，请求结束时调用 {@link #clear()}。
+ * 未登录或后台任务时返回系统用户 {@link #SYSTEM_USER_ID}。
+ */
+public final class CurrentUser {
+
+    public static final long SYSTEM_USER_ID = 0L;
+    private static final ThreadLocal<Long> HOLDER = new ThreadLocal<>();
+
+    private CurrentUser() {}
+
+    public static long id() {
+        Long id = HOLDER.get();
+        return id == null ? SYSTEM_USER_ID : id;
+    }
+
+    public static void set(Long userId) {
+        HOLDER.set(userId);
+    }
+
+    public static void clear() {
+        HOLDER.remove();
+    }
+}

@@ -1,0 +1,10 @@
+package {{ package_name }}.example.domain;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ExampleNoteRepository extends JpaRepository<ExampleNote, Long> {
+
+    Page<ExampleNote> findByTitleContaining(String keyword, Pageable pageable);
+}

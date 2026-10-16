@@ -1,0 +1,13 @@
+---
+id: 85-xinchuang
+title: 信创数据库规范
+scope: glob
+globs: db/**, backend/app/src/main/resources/**
+summary: 编写迁移脚本、原生 SQL 或数据库配置前读取
+---
+# 信创数据库规范（{{ '达梦 DM8' if xinchuang_db == 'dm' else '人大金仓 KingbaseES' }}）
+
+- 每个迁移脚本必须同时写 `db/migration/postgresql/` 和 `db/migration/{{ xinchuang_db }}/` 两份，文件名一致。
+- 只使用两种数据库都支持的语法；不确定时查 `docs/adr/` 中的信创验证结论，没有结论就 `[需要人工决策]`。
+- 原生 SQL 必须在两种数据库上都能执行；不能时在 `infra` 包中按方言分别实现。
+- 集成测试至少在 PostgreSQL 和 {{ '达梦' if xinchuang_db == 'dm' else '金仓' }} 上各运行一次，结果写入 `acceptance.md`。

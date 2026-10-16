@@ -1,0 +1,22 @@
+package {{ package_name }}.common.web;
+
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+
+/** 主键在接口中以字符串传输，在服务端内部使用 long。 */
+public final class Ids {
+
+    private Ids() {}
+
+    public static long parse(String id) {
+        try {
+            return Long.parseLong(id);
+        } catch (NumberFormatException ex) {
+            throw new BizException(CommonErrorCode.BAD_REQUEST, "ID 格式不正确：" + id);
+        }
+    }
+
+    public static String format(Long id) {
+        return id == null ? null : Long.toString(id);
+    }
+}

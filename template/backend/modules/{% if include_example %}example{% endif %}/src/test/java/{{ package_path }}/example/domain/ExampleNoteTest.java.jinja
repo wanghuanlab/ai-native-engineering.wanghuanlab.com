@@ -1,0 +1,31 @@
+package {{ package_name }}.example.domain;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import {{ package_name }}.common.error.BizException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+class ExampleNoteTest {
+
+    @Test
+    @DisplayName("[AC-example-note-01] 新建笔记为草稿状态")
+    void newNoteIsDraft() {
+        ExampleNote note = ExampleNote.draft("标题", "内容");
+
+        assertThat(note.getStatus()).isEqualTo(ExampleNoteStatus.DRAFT);
+    }
+
+    @Test
+    @DisplayName("[AC-example-note-02] 已发布的笔记不能重复发布")
+    void cannotPublishTwice() {
+        ExampleNote note = ExampleNote.draft("标题", null);
+        note.publish();
+
+        assertThatThrownBy(note::publish)
+                .isInstanceOf(BizException.class)
+                .extracting(ex -> ((BizException) ex).errorCode())
+                .isEqualTo(ExampleErrorCode.ALREADY_PUBLISHED);
+    }
+}

@@ -1,0 +1,20 @@
+package {{ package_name }}.common.error;
+
+/** 业务异常。只用于可预期的业务规则失败，由全局异常处理转换为标准错误响应。 */
+public class BizException extends RuntimeException {
+
+    private final transient ErrorCode errorCode;
+
+    public BizException(ErrorCode errorCode) {
+        this(errorCode, errorCode.message());
+    }
+
+    public BizException(ErrorCode errorCode, String detail) {
+        super(detail);
+        this.errorCode = errorCode;
+    }
+
+    public ErrorCode errorCode() {
+        return errorCode;
+    }
+}

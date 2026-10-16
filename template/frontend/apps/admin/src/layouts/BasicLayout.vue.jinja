@@ -1,0 +1,66 @@
+<template>
+  <el-container class="layout">
+    <el-aside :width="app.sidebarCollapsed ? '64px' : '220px'" class="layout__aside">
+      <div class="layout__logo">{{ '{{' }} logoText {{ '}}' }}</div>
+      <el-menu :default-active="route.path" :collapse="app.sidebarCollapsed" router>
+        <el-menu-item v-for="item in menus" :key="item.path" :index="item.path">
+          {{ '{{' }} item.title {{ '}}' }}
+        </el-menu-item>
+      </el-menu>
+    </el-aside>
+    <el-container>
+      <el-header class="layout__header">
+        <el-button text @click="app.toggleSidebar()">{{ '{{' }} toggleText {{ '}}' }}</el-button>
+        <span>{{ '{{' }} route.meta.title {{ '}}' }}</span>
+      </el-header>
+      <el-main>
+        <router-view />
+      </el-main>
+    </el-container>
+  </el-container>
+</template>
+
+<script setup lang="ts">
+import { routes } from '@/router'
+import { useAppStore } from '@/stores/app'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const app = useAppStore()
+const route = useRoute()
+
+const projectName = '{{ project_name }}'
+const logoText = computed(() => (app.sidebarCollapsed ? projectName.slice(0, 2) : projectName))
+const toggleText = computed(() => (app.sidebarCollapsed ? '展开' : '收起'))
+
+const menus = computed(() =>
+  (routes[0]?.children ?? []).map((r) => ({
+    path: r.path ? `/${r.path}` : '/',
+    title: String(r.meta?.title ?? r.name ?? r.path),
+  })),
+)
+</script>
+
+<style scoped>
+.layout {
+  height: 100vh;
+}
+.layout__aside {
+  border-right: 1px solid var(--el-border-color-light);
+  transition: width 0.2s;
+}
+.layout__logo {
+  height: 56px;
+  line-height: 56px;
+  text-align: center;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.layout__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+</style>

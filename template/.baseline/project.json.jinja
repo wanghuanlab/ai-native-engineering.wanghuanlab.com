@@ -1,0 +1,12 @@
+{
+  "projectCode": "{{ project_code }}",
+  "projectName": "{{ project_name }}",
+  "packageName": "{{ package_name }}",
+  "techLeads": [{% for tl in tech_lead.split(',') %}"{{ tl.strip() }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "securityLevel": "{{ security_level }}",
+  "profiles": {
+    "xinchuang": {{ 'true' if enable_xinchuang else 'false' }},
+    "screen": {{ 'true' if enable_screen else 'false' }}
+  },
+  "dialects": [{% for d in dialects.split(',') %}"{{ d }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+}

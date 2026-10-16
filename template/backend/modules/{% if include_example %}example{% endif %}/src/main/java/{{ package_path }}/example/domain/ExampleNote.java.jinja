@@ -1,0 +1,57 @@
+package {{ package_name }}.example.domain;
+
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+@Entity
+@Table(name = "example_note")
+@SoftDelete(columnName = "deleted")
+public class ExampleNote extends BaseEntity {
+
+    @Column(nullable = false, length = 64)
+    private String title;
+
+    @Column(length = 2000)
+    private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private ExampleNoteStatus status;
+
+    protected ExampleNote() {}
+
+    /** BR-example-note-01：新建的笔记一律为草稿。 */
+    public static ExampleNote draft(String title, String content) {
+        ExampleNote note = new ExampleNote();
+        note.title = title;
+        note.content = content;
+        note.status = ExampleNoteStatus.DRAFT;
+        return note;
+    }
+
+    /** BR-example-note-02：已发布的笔记不能重复发布。 */
+    public void publish() {
+        if (status == ExampleNoteStatus.PUBLISHED) {
+            throw new BizException(ExampleErrorCode.ALREADY_PUBLISHED);
+        }
+        status = ExampleNoteStatus.PUBLISHED;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public ExampleNoteStatus getStatus() {
+        return status;
+    }
+}

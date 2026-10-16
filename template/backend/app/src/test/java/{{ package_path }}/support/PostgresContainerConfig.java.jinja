@@ -1,0 +1,17 @@
+package {{ package_name }}.support;
+
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+
+/** 集成测试使用真实 PostgreSQL 容器，并执行全部迁移脚本。需要本机运行 Docker。 */
+@TestConfiguration(proxyBeanMethods = false)
+public class PostgresContainerConfig {
+
+    @Bean
+    @ServiceConnection
+    PostgreSQLContainer postgres() {
+        return new PostgreSQLContainer("postgres:17-alpine");
+    }
+}

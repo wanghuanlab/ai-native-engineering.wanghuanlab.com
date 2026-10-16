@@ -1,0 +1,13 @@
+package {{ package_name }};
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+/** {{ project_name }}启动类。业务模块是本包下的直接子包，由 Spring Modulith 检查模块边界。 */
+@SpringBootApplication
+public class Application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}

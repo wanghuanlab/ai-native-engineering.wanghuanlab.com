@@ -1,0 +1,13 @@
+package {{ package_name }};
+
+import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModules;
+
+/** 模块边界检查：业务模块之间只能通过对方的 api 包交互，且不能循环依赖。 */
+class ModularityTest {
+
+    @Test
+    void modulesRespectBoundaries() {
+        ApplicationModules.of(Application.class).verify();
+    }
+}

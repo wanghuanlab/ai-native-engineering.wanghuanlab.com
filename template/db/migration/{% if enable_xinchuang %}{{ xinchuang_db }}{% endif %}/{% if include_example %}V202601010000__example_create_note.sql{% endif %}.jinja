@@ -1,0 +1,26 @@
+-- 需求：示例模块（docs/specs/example-note/spec.md）
+-- 方言：{{ '达梦 DM8' if xinchuang_db == 'dm' else '人大金仓 KingbaseES' }}（类型映射待第 0 阶段验证确认）
+-- 回退方式：DROP TABLE example_note;
+
+CREATE TABLE example_note (
+    id          BIGINT                   NOT NULL,
+    title       VARCHAR(64)              NOT NULL,
+    content     VARCHAR(2000),
+    status      VARCHAR(32)              NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by  BIGINT                   NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by  BIGINT                   NOT NULL,
+    version     INTEGER                  DEFAULT 0 NOT NULL,
+{%- if xinchuang_db == 'dm' %}
+    deleted     BIT                      DEFAULT 0 NOT NULL,
+{%- else %}
+    deleted     BOOLEAN                  DEFAULT FALSE NOT NULL,
+{%- endif %}
+    CONSTRAINT pk_example_note PRIMARY KEY (id)
+);
+
+CREATE INDEX idx_example_note_created_at ON example_note (created_at);
+
+COMMENT ON TABLE example_note IS '示例笔记';
+COMMENT ON COLUMN example_note.status IS '状态：DRAFT-草稿，PUBLISHED-已发布';

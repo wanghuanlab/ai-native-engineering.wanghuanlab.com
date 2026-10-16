@@ -1,0 +1,16 @@
+# 基线托管文件：只能通过 scripts/sync-baseline.sh 更新，项目内禁止修改（提交钩子会拦截）。
+# 项目需要补充规则时写在 .ai/project/；需要修改这些文件时，向基线维护组提交改进提案。
+.ai/rules/**
+.ai/skills/**
+.baseline/**
+.githooks/**
+.editorconfig
+scripts/**
+docs/_templates/**
+backend/mvnw
+backend/mvnw.cmd
+backend/.mvn/**
+frontend/eslint.config.js
+frontend/.prettierrc.json
+frontend/tsconfig.base.json
+frontend/scripts/gen-api.mjs

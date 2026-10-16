@@ -1,0 +1,16 @@
+---
+id: 80-screen
+title: 大屏可视化规范
+scope: glob
+globs: frontend/apps/screen/**
+summary: 修改大屏应用（Three.js / Cesium）前读取
+---
+# 大屏可视化规范
+
+- Three.js 场景只能通过 `useThreeScene` 挂载；不要自己创建渲染循环。
+- Three.js / Cesium 对象一律不放进 `ref`、`reactive`，需要保存时用普通变量或 `shallowRef`。
+- 组件卸载时必须释放资源：几何体、材质、纹理、渲染器（`useThreeScene` 已处理场景内对象；自行创建的对象要自行释放）。
+- 模型资源使用 glTF / GLB，大模型启用 Draco 压缩；倾斜摄影等大场景使用 3D Tiles。
+- 实时数据推送优先使用 SSE；高频双向交互才使用 WebSocket。
+- 每帧回调中不得创建新对象、不得发起网络请求。
+- 引入 Cesium 时单独评估构建体积与离线部署方式，并记录在 `docs/adr/`。
