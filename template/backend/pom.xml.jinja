@@ -35,6 +35,9 @@
         <archunit.version>1.5.1</archunit.version>
         <openapi-generator.version>7.26.0</openapi-generator.version>
         <spotless.version>3.10.4</spotless.version>
+        <!-- Boot 4 的 Knife4j。官方 4.5.0 只支持 Boot 3，说明见 .ai/rules/45-knife4j.md -->
+        <knife4j.version>5.7.9</knife4j.version>
+        <swagger-annotations.version>2.2.55</swagger-annotations.version>
         <contracts.dir>${maven.multiModuleProjectDirectory}/../contracts/openapi</contracts.dir>
     </properties>
 
@@ -61,6 +64,16 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit-junit5</artifactId>
                 <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baizhukui</groupId>
+                <artifactId>knife4j-openapi3-boot4-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger-annotations.version}</version>
             </dependency>
 {%- if enable_xinchuang and xinchuang_db == 'dm' %}
             <!-- 驱动与方言版本以第 0 阶段信创验证结果为准 -->
@@ -127,7 +140,8 @@
                             <skipDefaultInterface>true</skipDefaultInterface>
                             <openApiNullable>false</openApiNullable>
                             <documentationProvider>none</documentationProvider>
-                            <annotationLibrary>none</annotationLibrary>
+                            <!-- swagger2 = io.swagger.v3.oas.annotations，供 Knife4j 展示契约 -->
+                            <annotationLibrary>swagger2</annotationLibrary>
                             <useBeanValidation>true</useBeanValidation>
                             <useResponseEntity>true</useResponseEntity>
                             <hideGenerationTimestamp>true</hideGenerationTimestamp>

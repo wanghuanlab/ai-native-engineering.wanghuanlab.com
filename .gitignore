@@ -3,4 +3,5 @@
 .vscode/
 *.iml
 /.selftest/
+.archify
 __pycache__/

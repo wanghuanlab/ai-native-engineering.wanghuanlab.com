@@ -28,3 +28,5 @@ summary: 处理权限、个人信息、密钥、外部数据，或不确定能�
 ## 权限
 
 - 新增接口必须在 `design.md` 中说明谁可以调用；涉及权限的变更属于 L 级。
+- 生产环境关闭 Knife4j。对外入口只代理 `/api/`，不要暴露 `/doc.html`、`/v3/api-docs`、`/swagger-ui.html`。
+- 外部入参必须校验；SQL 使用参数绑定。上传限制大小和类型。对外重定向走白名单。Cookie 会话要防 CSRF。细则见 `.ai/rules/25-alibaba-java.md`。

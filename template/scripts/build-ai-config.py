@@ -119,7 +119,8 @@ def render_agents(project: dict, rules: list[Rule], skills: list[tuple[str, str,
         f"- 技术负责人：{', '.join(project['techLeads'])}",
         f"- 画像：{', '.join(profiles) if profiles else '标准业务系统'}；数据库方言：{', '.join(project['dialects'])}",
         "- 技术栈：Java 21 + Spring Boot + Spring Data JPA（`backend/`）；Vue 3 + TypeScript + Element Plus（`frontend/`）；"
-        "OpenAPI 契约（`contracts/openapi/`）；迁移脚本（`db/migration/`）",
+        "OpenAPI 契约（`contracts/openapi/`，Knife4j `/doc.html`）；迁移脚本（`db/migration/`）；"
+        "Java 编码见 `.ai/rules/25-alibaba-java.md`",
         "",
     ]
     for rule in (r for r in rules if r.scope == "always"):

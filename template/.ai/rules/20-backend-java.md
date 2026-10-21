@@ -7,6 +7,8 @@ summary: 修改 backend/ 下的 Java 代码或 POM 前读取
 ---
 # 后端 Java 规范
 
+编码强制项同时遵守 `.ai/rules/25-alibaba-java.md`（《Java 开发手册》黄山版）。与本文件冲突时，以本文件的分层、事务、MapStruct 和错误码写法为准。
+
 ## 模块与分层
 
 - 新模块必须用 `./scripts/new-module.sh <模块名>` 创建，不要手工搭目录。
@@ -18,6 +20,7 @@ summary: 修改 backend/ 下的 Java 代码或 POM 前读取
 ## 接口实现
 
 - Controller 必须实现由契约生成的接口（`<模块>.web.api.*Api`），DTO 用生成的 `*Dto` 类。先改契约，再写实现。
+- 不在 Controller 上另写 `@Operation`、`@Tag`、`@Schema`。这些注解由生成器按契约写出，Knife4j 只负责展示，见 `.ai/rules/45-knife4j.md`。
 - 实体与 DTO 的转换用 MapStruct（`web/*WebMapper`），禁止 `BeanUtils.copyProperties`。
 - 主键在接口里是字符串：路径参数用 `Ids.parse(id)` 转换。
 

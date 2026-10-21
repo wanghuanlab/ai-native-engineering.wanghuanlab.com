@@ -1,17 +1,43 @@
 package {{ package_name }};
 
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import {{ package_name }}.support.PostgresContainerConfig;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 /** 在真实数据库上执行全部迁移，并校验所有实体与表结构一致（ddl-auto=validate）。 */
 @SpringBootTest
 @Import(PostgresContainerConfig.class)
 class ApplicationIT {
 
+    @Autowired
+    private WebApplicationContext context;
+
     @Test
     void migrationsApplyAndEntitiesMatchSchema() {
         // 上下文能启动即说明迁移成功、实体与表结构一致
+    }
+
+    @Test
+    void knife4jExposesContract() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc.perform(get("/doc.html")).andExpect(status().isOk());
+        mockMvc.perform(get("/v3/api-docs/swagger-config"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("api-docs")));
+{%- if include_example %}
+        mockMvc.perform(get("/v3/api-docs/default"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/api/example/notes")));
+{%- endif %}
     }
 }
