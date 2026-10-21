@@ -19,6 +19,92 @@ expect_fail() {
   if "$@" >/dev/null 2>&1; then die "${name}：应当被拦截，实际通过"; else pass "${name}：已拦截"; fi
 }
 
+# 反向门禁。兼容 macOS Bash 3.2 与 set -u：不用空数组展开，赋值与 local 分开写。
+check_frontend_fails_closed() {
+  local mock_dir out status
+  mock_dir="$(mktemp -d "${TMPDIR:-/tmp}/baseline-gate.XXXXXX")"
+  cat > "${mock_dir}/pnpm" <<'EOF'
+#!/bin/sh
+for arg in "$@"; do
+  case "$arg" in
+    typecheck)
+      echo "SIMULATED TYPECHECK FAILURE" >&2
+      exit 23
+      ;;
+  esac
+done
+exit 0
+EOF
+  chmod +x "${mock_dir}/pnpm"
+  set +e
+  out="$(PATH="${mock_dir}:${PATH}" ./scripts/verify.sh frontend 2>&1)"
+  status=$?
+  set -e
+  rm -rf "${mock_dir}"
+  if [ "${status}" -eq 0 ]; then
+    die "非末条前端命令失败：应当失败，实际通过"
+  fi
+  case "${out}" in
+    *"SIMULATED TYPECHECK FAILURE"*) ;;
+    *) die "非末条前端命令失败：没有执行到模拟的 typecheck" ;;
+  esac
+  case "${out}" in
+    *"✓ 前端检查"*) die "非末条前端命令失败：步骤被记为通过" ;;
+  esac
+  case "${out}" in
+    *"✗ 前端检查"*) pass "非末条前端命令失败：校验返回非零" ;;
+    *) die "非末条前端命令失败：未标记步骤失败" ;;
+  esac
+}
+
+check_secret_scan_binary_and_text() {
+  local out status
+  python3 -c 'from pathlib import Path
+blob = b"BIN\x00\xff\xfe\xfd"
+for name in ("model.glb", "photo.webp", "sheet.xlsx", "cache.pyc", "payload.bin"):
+    Path(name).write_bytes(blob)
+Path("notes.txt").write_text("普通说明，没有密钥\n", encoding="utf-8")'
+  git add model.glb photo.webp sheet.xlsx cache.pyc payload.bin notes.txt
+  set +e
+  out="$(python3 scripts/lib/checks.py secrets --staged 2>&1)"
+  status=$?
+  set -e
+  git reset -q -- model.glb photo.webp sheet.xlsx cache.pyc payload.bin notes.txt
+  rm -f model.glb photo.webp sheet.xlsx cache.pyc payload.bin notes.txt
+  if [ "${status}" -ne 0 ]; then
+    printf '%s\n' "${out}" >&2
+    die "暂存二进制文件：密钥扫描应当通过，实际失败（退出码 ${status}）"
+  fi
+  case "${out}" in
+    *UnicodeDecodeError*|*Traceback*) die "暂存二进制文件：密钥扫描崩溃" ;;
+  esac
+  pass "暂存二进制文件：密钥扫描未崩溃"
+
+  printf '%s\n' 'access_key = AKIAIOSFODNN7EXAMPLE' > leak.txt
+  python3 -c 'from pathlib import Path; Path("payload.bin").write_bytes(b"BIN\x00\xff\xfe\xfd")'
+  git add leak.txt payload.bin
+  set +e
+  out="$(python3 scripts/lib/checks.py secrets --staged 2>&1)"
+  status=$?
+  set -e
+  git reset -q -- leak.txt payload.bin
+  rm -f leak.txt payload.bin
+  if [ "${status}" -eq 0 ]; then
+    die "文本文件中的密钥：应当被拦截，实际通过"
+  fi
+  case "${out}" in
+    *UnicodeDecodeError*|*Traceback*) die "文本文件中的密钥：扫描崩溃而非拦截" ;;
+  esac
+  case "${out}" in
+    *发现疑似密钥*) ;;
+    *) die "文本文件中的密钥：未报告疑似密钥" ;;
+  esac
+  case "${out}" in
+    *leak.txt*) pass "文本文件中的密钥：已拦截" ;;
+    *) die "文本文件中的密钥：未指向文本文件" ;;
+  esac
+}
+
 generate() {
   local name="$1"
   shift
@@ -72,6 +158,9 @@ gate_tests() {
   git add leak.properties
   expect_fail "提交明文密码" python3 scripts/lib/checks.py secrets --staged
   git reset -q && rm leak.properties
+
+  check_frontend_fails_closed
+  check_secret_scan_binary_and_text
 
   printf 'update stuff\n' >/tmp/selftest-msg
   expect_fail "提交说明不规范" python3 scripts/lib/checks.py commit-msg /tmp/selftest-msg
