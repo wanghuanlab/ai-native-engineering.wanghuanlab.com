@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
-# 提交说明格式：<类型>(<模块>): <中文描述>，正文包含 Refs: <需求或缺陷编号>
-set -euo pipefail
+#!/bin/sh
+# 提交说明格式。参数是 Git 传入的说明文件。
+set -eu
 cd "$(git rev-parse --show-toplevel)"
-
-python3 scripts/lib/checks.py commit-msg "$1"
+. scripts/lib/hooklib.sh
+py scripts/lib/checks.py commit-msg "$1"

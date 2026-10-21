@@ -12,6 +12,7 @@ summary: 任务分级、变更包、修改范围、红线与必须停下来的�
 4. 只修改 `tasks.md`「修改范围」中列出的文件。
 5. 每完成一项任务：运行该任务写明的验证命令，通过后勾选并写备注。
 6. 一个会话只做一个环节。结束会话前，把进度和注意事项写进 `tasks.md`。
+7. 项目脚本在 macOS / Linux 用 `scripts/<名>.sh`，在 Windows 的 PowerShell 或 cmd 用 `scripts\<名>.cmd`（`.ps1` 同样可用）。文档里的 `./scripts/verify.sh` 在 Windows 上改成 `scripts\verify.cmd`。后端 Maven 包装脚本同理：`./mvnw` 对应 `mvnw.cmd`。
 
 ## 红线
 

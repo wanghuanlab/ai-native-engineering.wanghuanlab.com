@@ -4,6 +4,7 @@
 .ai/skills/**
 .baseline/**
 .githooks/**
+.gitattributes
 .editorconfig
 scripts/**
 docs/_templates/**

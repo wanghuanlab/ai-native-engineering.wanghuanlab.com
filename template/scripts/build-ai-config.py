@@ -145,10 +145,10 @@ def render_agents(project: dict, rules: list[Rule], skills: list[tuple[str, str,
         "",
         "## 常用命令",
         "",
-        "- 快速校验：`./scripts/verify.sh quick`；完整校验（含集成测试）：`./scripts/verify.sh full`",
-        "- 新建变更包：`./scripts/new-change.sh <短名> --level M|L`；新建后端模块：`./scripts/new-module.sh <模块名>`",
+        "- 快速校验：`./scripts/verify.sh quick`（Windows：`scripts\\verify.cmd quick`）；完整校验：`./scripts/verify.sh full`",
+        "- 新建变更包：`./scripts/new-change.sh <短名> --level M|L`（Windows 把 `.sh` 换成 `.cmd`）；新建后端模块同理",
         "- 生成前端接口客户端：`cd frontend && pnpm gen:api`；更新表结构摘要：`./scripts/db-schema.sh`",
-        "- 后端格式化：`cd backend && ./mvnw spotless:apply`；前端格式化：`cd frontend && pnpm format`",
+        "- 后端格式化：`cd backend && ./mvnw spotless:apply`（Windows：`mvnw.cmd`）；前端格式化：`cd frontend && pnpm format`",
         "",
     ]
     text = "\n".join(lines)
