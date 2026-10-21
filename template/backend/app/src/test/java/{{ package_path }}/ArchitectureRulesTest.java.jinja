@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 class ArchitectureRulesTest {
 
     @ArchTest
-    static final ArchRule webMustNotUseRepositories = noClasses()
+    static final ArchRule WEB_MUST_NOT_USE_REPOSITORIES = noClasses()
             .that()
             .resideInAPackage("..web..")
             .should()
@@ -28,7 +28,7 @@ class ArchitectureRulesTest {
             .because("Controller 必须通过 service 层访问数据");
 
     @ArchTest
-    static final ArchRule webMustNotBeTransactional = noMethods()
+    static final ArchRule WEB_MUST_NOT_BE_TRANSACTIONAL = noMethods()
             .that()
             .areDeclaredInClassesThat()
             .resideInAPackage("..web..")
@@ -37,7 +37,7 @@ class ArchitectureRulesTest {
             .because("事务边界只在 service 层");
 
     @ArchTest
-    static final ArchRule webClassesMustNotBeTransactional = noClasses()
+    static final ArchRule WEB_CLASSES_MUST_NOT_BE_TRANSACTIONAL = noClasses()
             .that()
             .resideInAPackage("..web..")
             .should()
@@ -45,7 +45,7 @@ class ArchitectureRulesTest {
             .because("事务边界只在 service 层");
 
     @ArchTest
-    static final ArchRule domainMustNotDependOnOuterLayers = noClasses()
+    static final ArchRule DOMAIN_MUST_NOT_DEPEND_ON_OUTER_LAYERS = noClasses()
             .that()
             .resideInAPackage("..domain..")
             .should()
@@ -54,11 +54,11 @@ class ArchitectureRulesTest {
             .because("领域层不依赖外层");
 
     @ArchTest
-    static final ArchRule noBeanUtilsCopy =
+    static final ArchRule NO_BEAN_UTILS_COPY =
             noClasses().should().callMethodWhere(target(name("copyProperties"))).because("禁止反射复制属性，使用 MapStruct");
 
     @ArchTest
-    static final ArchRule noSystemOut = noClasses()
+    static final ArchRule NO_SYSTEM_OUT = noClasses()
             .should()
             .accessField(System.class, "out")
             .orShould()
@@ -66,6 +66,6 @@ class ArchitectureRulesTest {
             .because("使用日志框架输出");
 
     @ArchTest
-    static final ArchRule noFieldInjection =
+    static final ArchRule NO_FIELD_INJECTION =
             noFields().should().beAnnotatedWith(Autowired.class).because("使用构造器注入");
 }

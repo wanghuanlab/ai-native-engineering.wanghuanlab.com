@@ -18,7 +18,7 @@ summary: 任务分级、变更包、修改范围、红线与必须停下来的�
 
 - 已合并到 main 的迁移脚本只读，表结构只能通过新增迁移脚本修改。
 - 不手改生成的代码（`frontend/packages/api-client/src/generated/`、`target/generated-sources/`）和 `.baseline/managed-files.txt` 列出的基线托管文件。
-- 不删除测试、不跳过测试、不降低断言来让校验通过。
+- 不删除测试、不跳过测试、不降低断言来让校验通过。不得用 `-DskipTests`、`checkstyle.skip`、`spotbugs.skip`、`jacoco.skip`、`spotless.skip` 或放宽 `backend/quality/` 让校验通过。
 - 不填写 PM 确认区、TL 审批区和部署回执，不推送 main 分支。
 - 不提交密钥、生产配置和真实个人信息。
 

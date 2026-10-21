@@ -27,7 +27,7 @@ description: 按任务清单实现功能。tasks.md 已就绪（L 级已获 TL �
 
 ## 完成标准
 
-- 所有任务已勾选，`./scripts/verify.sh quick` 通过。
+- 所有任务已勾选，`./scripts/verify.sh quick` 通过（含 Spotless、Checkstyle、SpotBugs）。不得跳过这些检查。
 - 下一步：执行 Skill `test-accept`。
 
 ## 必须停下来

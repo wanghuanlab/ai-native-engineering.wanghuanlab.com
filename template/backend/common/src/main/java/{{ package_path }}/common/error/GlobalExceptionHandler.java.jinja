@@ -78,7 +78,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private static void decorate(ProblemDetail problem, ErrorCode code) {
-        if (problem.getProperties() == null || !problem.getProperties().containsKey("code")) {
+        Map<String, Object> properties = problem.getProperties();
+        if (properties == null || !properties.containsKey("code")) {
             problem.setProperty("code", code.code());
         }
         problem.setProperty("traceId", MDC.get(TraceIdFilter.MDC_KEY));

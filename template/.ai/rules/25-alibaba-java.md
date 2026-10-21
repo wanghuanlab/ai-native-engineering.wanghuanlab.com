@@ -7,6 +7,8 @@ summary: 编写或修改 Java 前读取；强制项必须遵守
 ---
 # Java 编码规范（阿里巴巴黄山版）
 
+这是工程实践层，不是全部编码规范。质量门禁的分层见 `docs/standards/java-coding-standard.md` 和 `.ai/rules/15-quality-gate.md`。
+
 依据《Java 开发手册》黄山版 1.7.1（2022-02-03）整理，供离线执行。强制项必须遵守。推荐项默认遵守，偏离时在代码注释写明原因。参考项不作为要求。
 
 手册中的正例、反例和说明不逐字收录。分层、契约、表结构和错误响应若与本文件冲突，以 `.ai/rules/20-backend-java.md`、`30-database.md`、`40-api-contract.md` 为准。下面「本基线的取舍」优先于手册原文。

@@ -5,5 +5,6 @@ import java.util.Optional;
 /** 供其他模块调用。只暴露其他模块确实需要的能力，不暴露实体。 */
 public interface ExampleNoteFacade {
 
+    /** 按主键取笔记摘要。不存在时返回空。 */
     Optional<ExampleNoteSummary> findSummary(long id);
 }

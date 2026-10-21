@@ -7,7 +7,7 @@ summary: 修改 backend/ 下的 Java 代码或 POM 前读取
 ---
 # 后端 Java 规范
 
-编码强制项同时遵守 `.ai/rules/25-alibaba-java.md`（《Java 开发手册》黄山版）。与本文件冲突时，以本文件的分层、事务、MapStruct 和错误码写法为准。
+编码强制项同时遵守 `.ai/rules/25-alibaba-java.md`（《Java 开发手册》黄山版）和 `.ai/rules/15-quality-gate.md`。与本文件冲突时，以本文件的分层、事务、MapStruct 和错误码写法为准。
 
 ## 模块与分层
 

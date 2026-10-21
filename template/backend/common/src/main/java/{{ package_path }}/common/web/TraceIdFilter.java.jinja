@@ -25,10 +25,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String incoming = request.getHeader(HEADER);
-        String traceId = incoming != null && VALID.matcher(incoming).matches()
-                ? incoming
-                : UUID.randomUUID().toString().replace("-", "");
+        String traceId = traceIdOf(request.getHeader(HEADER));
         MDC.put(MDC_KEY, traceId);
         response.setHeader(HEADER, traceId);
         try {
@@ -36,5 +33,20 @@ public class TraceIdFilter extends OncePerRequestFilter {
         } finally {
             MDC.remove(MDC_KEY);
         }
+    }
+
+    /** 只接受字母、数字和连字符，避免把请求头原样写进响应头。 */
+    private static String traceIdOf(String incoming) {
+        if (incoming == null || !VALID.matcher(incoming).matches()) {
+            return UUID.randomUUID().toString().replace("-", "");
+        }
+        StringBuilder safe = new StringBuilder(incoming.length());
+        for (int i = 0; i < incoming.length(); i++) {
+            char c = incoming.charAt(i);
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
+                safe.append(c);
+            }
+        }
+        return safe.toString();
     }
 }

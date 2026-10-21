@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- 构造器注入会把 Spring 协作者存进字段，不是把内部数组暴露出去。 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- 由 openapi-generator 生成，不手改。 -->
+    <Match>
+        <Package name="~.*\.web\.dto"/>
+    </Match>
+    <Match>
+        <Package name="~.*\.web\.api"/>
+    </Match>
+</FindBugsFilter>

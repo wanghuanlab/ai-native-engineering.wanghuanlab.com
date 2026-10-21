@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+    <!-- 公开 Javadoc 只要求模块 api 包。其余公开方法的注释要求见 docs/standards/java-coding-standard.md。 -->
+    <suppress checks="MissingJavadocMethod" files="^(?!.*[/\\]api[/\\]).*"/>
+    <!-- record 的访问器由编译器生成，类注释说明用途即可。 -->
+    <suppress checks="MissingJavadocMethod" files="Summary\.java$"/>
+    <!-- 契约生成的接口和 DTO 不手改，也不按手写代码的风格检查。 -->
+    <suppress checks=".*" files="[/\\]target[/\\]generated-sources[/\\]"/>
+</suppressions>

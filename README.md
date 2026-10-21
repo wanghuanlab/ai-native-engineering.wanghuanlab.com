@@ -41,10 +41,10 @@ bin/new-project.sh ~/work/park --defaults -d project_code=park -d project_name=�
 | :--- | :--- |
 | 流程与产物 | S / M / L 分级；需求入库、变更包（提案、规格增量、设计、任务、验收）；10 份产物模板和一个填写完整的示范变更包 |
 | AI 协作 | `.ai/rules` 与 `.ai/skills` 一份源文件，编译生成 `AGENTS.md`、`CLAUDE.md`、`.cursor/rules`，以及 Cursor、Claude Code、Codex 的 Skills 目录；8 个标准 Skill 对应流程各环节；按项目密级生成 AI 使用规则 |
-| 后端 | Java 21、Spring Boot 4、JPA、Flyway、Spring Modulith 模块边界、ArchUnit 分层规则、契约生成接口、Knife4j 接口文档、ProblemDetail 错误响应、雪花 ID、软删除与审计字段、Testcontainers 集成测试；Java 编码遵循《Java 开发手册》黄山版 |
+| 后端 | Java 21、Spring Boot 4、JPA、Flyway、Spring Modulith 模块边界、ArchUnit 分层规则、契约生成接口、Knife4j 接口文档、ProblemDetail 错误响应、雪花 ID、软删除与审计字段、Testcontainers 集成测试 |
 | 前端 | Vue 3、TypeScript、Element Plus、Pinia、由契约生成的接口客户端；可选 Three.js 大屏应用 |
 | 数据库 | PostgreSQL；可选达梦或人大金仓，迁移脚本按方言一一对应 |
-| 门禁 | 提交钩子、推送钩子、`verify`（`quick` / `full`）、迁移脚本不可变、测试删除检查、密钥扫描、升级路径测试；可选服务端钩子 |
+| 门禁 | 提交钩子、推送钩子、`verify`（`quick` / `full`）。quick 含 Spotless、Checkstyle、SpotBugs；full 另含集成测试、JaCoCo、ArchUnit。另有迁移脚本不可变、测试删除检查、密钥扫描、升级路径测试；有 SonarQube 时用 `-Psonar` |
 | 脚手架 | `new-change`、`new-module`、`db-schema`、`release-pack`、`sync-baseline`。逻辑在 Python；`.sh`、`.cmd`、`.ps1` 只负责启动 |
 
 ## 目录

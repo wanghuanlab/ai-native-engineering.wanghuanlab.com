@@ -15,28 +15,31 @@ public final class Snowflake {
     private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
     private static final long WORKER_ID = resolveWorkerId();
 
+    private static final Object LOCK = new Object();
     private static long lastTimestamp = -1L;
     private static long sequence = 0L;
 
     private Snowflake() {}
 
-    public static synchronized long nextId() {
-        long now = System.currentTimeMillis();
-        if (now < lastTimestamp) {
-            now = lastTimestamp;
-        }
-        if (now == lastTimestamp) {
-            sequence = (sequence + 1) & SEQUENCE_MASK;
-            if (sequence == 0) {
-                while (now <= lastTimestamp) {
-                    now = System.currentTimeMillis();
-                }
+    public static long nextId() {
+        synchronized (LOCK) {
+            long now = System.currentTimeMillis();
+            if (now < lastTimestamp) {
+                now = lastTimestamp;
             }
-        } else {
-            sequence = 0L;
+            if (now == lastTimestamp) {
+                sequence = (sequence + 1) & SEQUENCE_MASK;
+                if (sequence == 0) {
+                    while (now <= lastTimestamp) {
+                        now = System.currentTimeMillis();
+                    }
+                }
+            } else {
+                sequence = 0L;
+            }
+            lastTimestamp = now;
+            return ((now - EPOCH) << (WORKER_BITS + SEQUENCE_BITS)) | (WORKER_ID << SEQUENCE_BITS) | sequence;
         }
-        lastTimestamp = now;
-        return ((now - EPOCH) << (WORKER_BITS + SEQUENCE_BITS)) | (WORKER_ID << SEQUENCE_BITS) | sequence;
     }
 
     private static long resolveWorkerId() {

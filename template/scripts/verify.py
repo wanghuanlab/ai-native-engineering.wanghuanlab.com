@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     elif mode == "db":
         steps = [("迁移脚本", "db")]
     elif mode == "backend":
-        steps = [("后端格式与单元测试", "backend-test")]
+        steps = [("后端格式、静态检查与单元测试", "backend-test")]
     elif mode == "frontend":
         steps = [("前端检查", "frontend")]
     elif mode == "upgrade":
@@ -32,7 +32,7 @@ def main(argv: list[str] | None = None) -> int:
         steps = [
             ("AI 配置一致性", "ai"),
             ("迁移脚本", "db"),
-            ("后端格式与单元测试", "backend-test"),
+            ("后端格式、静态检查与单元测试", "backend-test"),
             ("前端检查", "frontend"),
         ]
     elif mode == "full":
@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
             ("迁移脚本", "db"),
             ("测试删除检查", "test-guard"),
             ("密钥扫描", "secrets"),
-            ("后端格式、单元测试与集成测试", "backend-verify"),
+            ("后端格式、静态检查、测试与覆盖率", "backend-verify"),
             ("前端检查与构建", "frontend-build"),
             ("升级路径", "upgrade"),
         ]
@@ -84,9 +84,13 @@ def run_kind(kind: str) -> None:
     elif kind == "secrets":
         run([sys.executable, "scripts/lib/checks.py", "secrets", "--all"], cwd=ROOT)
     elif kind == "backend-test":
-        run(maven_argv(["spotless:check", "test"], windows=IS_WINDOWS), cwd=ROOT / "backend")
+        run(
+            maven_argv(["spotless:check", "checkstyle:check", "test", "spotbugs:check"], windows=IS_WINDOWS),
+            cwd=ROOT / "backend",
+        )
     elif kind == "backend-verify":
         run(maven_argv(["spotless:check", "verify"], windows=IS_WINDOWS), cwd=ROOT / "backend")
+        check_coverage()
     elif kind == "frontend":
         frontend(build=False)
     elif kind == "frontend-build":
@@ -99,6 +103,30 @@ def run_kind(kind: str) -> None:
             raise SystemExit(code)
     else:
         raise SystemExit(2)
+
+
+def check_coverage() -> None:
+    import csv
+
+    report = ROOT / "backend" / "app" / "target" / "site" / "jacoco-aggregate" / "jacoco.csv"
+    minimum_file = ROOT / "backend" / "quality" / "coverage-minimum.txt"
+    if not report.is_file():
+        raise SystemExit(f"缺少覆盖率报告 {report.relative_to(ROOT)}")
+    missed = covered = 0
+    with report.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            missed += int(row["LINE_MISSED"])
+            covered += int(row["LINE_COVERED"])
+    total = missed + covered
+    if total == 0:
+        raise SystemExit("JaCoCo 聚合报告没有统计到任何代码行")
+    ratio = covered / total
+    minimum = float(minimum_file.read_text(encoding="utf-8").strip())
+    print(f"  行覆盖率 {ratio:.1%}，下限 {minimum:.1%}", flush=True)
+    if ratio + 1e-9 < minimum:
+        raise SystemExit(
+            f"行覆盖率 {ratio:.1%} 低于 {minimum_file.relative_to(ROOT)} 里的 {minimum:.1%}。补测试，不要下调这个下限。"
+        )
 
 
 def frontend(build: bool) -> None:

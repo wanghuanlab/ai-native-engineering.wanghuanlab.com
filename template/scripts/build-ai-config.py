@@ -120,7 +120,7 @@ def render_agents(project: dict, rules: list[Rule], skills: list[tuple[str, str,
         f"- 画像：{', '.join(profiles) if profiles else '标准业务系统'}；数据库方言：{', '.join(project['dialects'])}",
         "- 技术栈：Java 21 + Spring Boot + Spring Data JPA（`backend/`）；Vue 3 + TypeScript + Element Plus（`frontend/`）；"
         "OpenAPI 契约（`contracts/openapi/`，Knife4j `/doc.html`）；迁移脚本（`db/migration/`）；"
-        "Java 编码见 `.ai/rules/25-alibaba-java.md`",
+        "质量门禁见 `docs/standards/java-coding-standard.md`",
         "",
     ]
     for rule in (r for r in rules if r.scope == "always"):
@@ -149,7 +149,7 @@ def render_agents(project: dict, rules: list[Rule], skills: list[tuple[str, str,
         "- 快速校验：`./scripts/verify.sh quick`（Windows：`scripts\\verify.cmd quick`）；完整校验：`./scripts/verify.sh full`",
         "- 新建变更包：`./scripts/new-change.sh <短名> --level M|L`（Windows 把 `.sh` 换成 `.cmd`）；新建后端模块同理",
         "- 生成前端接口客户端：`cd frontend && pnpm gen:api`；更新表结构摘要：`./scripts/db-schema.sh`",
-        "- 后端格式化：`cd backend && ./mvnw spotless:apply`（Windows：`mvnw.cmd`）；前端格式化：`cd frontend && pnpm format`",
+        "- 后端格式化：`cd backend && ./mvnw spotless:apply`（Windows：`mvnw.cmd`）。quick 含 Checkstyle 与 SpotBugs，full 另含 JaCoCo",
         "",
     ]
     text = "\n".join(lines)
