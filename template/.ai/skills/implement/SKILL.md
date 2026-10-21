@@ -8,7 +8,7 @@ description: 按任务清单实现功能。tasks.md 已就绪（L 级已获 TL �
 
 1. `docs/changes/<REQ>/tasks.md`（从第一个未勾选的任务开始）
 2. `docs/changes/<REQ>/spec-delta.md`、`design.md`（L 级）
-3. 当前任务涉及目录的规则：`.ai/rules/20-backend-java.md`、`40-api-contract.md`、`50-frontend-vue.md`
+3. 当前任务涉及目录的规则：`.ai/rules/20-backend-java.md`、`25-alibaba-java.md`、`40-api-contract.md`、`50-frontend-vue.md`
 4. `docs/context/pitfalls.md`
 
 ## 步骤

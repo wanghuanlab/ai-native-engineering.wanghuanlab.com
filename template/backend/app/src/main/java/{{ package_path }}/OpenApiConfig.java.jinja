@@ -1,0 +1,20 @@
+package {{ package_name }};
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/** Knife4j 文档头。路径和字段来自契约生成的注解，不在这里登记接口。 */
+@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI projectOpenApi() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("{{ project_name }}")
+                        .version("0.1.0")
+                        .description("接口契约在 contracts/openapi。本页只展示和调试，不作为事实源。"));
+    }
+}

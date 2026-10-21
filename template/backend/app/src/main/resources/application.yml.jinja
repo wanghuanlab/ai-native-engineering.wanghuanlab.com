@@ -35,3 +35,21 @@ management:
 logging:
   pattern:
     level: "%5p [%X{traceId:-}]"
+
+# 接口文档。契约仍是事实源，这里只控制 Knife4j / springdoc 的展示。生产环境在 application-prod.yml 关闭。
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: default
+      paths-to-match: /api/**
+      packages-to-scan: {{ package_name }}
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn

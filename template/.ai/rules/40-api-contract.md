@@ -14,5 +14,7 @@ summary: 新增或修改接口契约前读取
 - 主键引用 `common.yaml#/components/schemas/Id`（字符串）。
 - 分页参数引用 `common.yaml` 的 `Page`、`Size`；分页响应结构为 `{ items, total, page, size }`。
 - 成功响应直接返回数据，不包信封；错误响应统一为 `ProblemDetail`（带 `code`、`traceId`）。
+- 列表为空返回空数组，不返回 null。JSON 字段用 lowerCamelCase。页码小于 1 时按第 1 页处理。
+- 不在实现类上另写 OpenAPI 注解。Knife4j 展示生成器写在接口上的注解，配置见 `.ai/rules/45-knife4j.md`。生产环境关闭文档。
 - 枚举值用大写英文，并在 `description` 中写明含义。
 - 已发布的接口只允许兼容扩展：新增可选字段、新增接口。删除、重命名、改类型属于 L 级。

@@ -2,6 +2,8 @@
 
 ## 未发布
 
+- 技术规范：集成 Knife4j。官方快速开始只覆盖 Spring Boot 3，骨架使用支持 Boot 4 的 starter，并把接入说明写入 `.ai/rules/45-knife4j.md`。`new-project` 不访问在线文档。本地文档地址 `/doc.html`，生产环境关闭。
+- 技术规范：Java 编码遵循《Java 开发手册》黄山版。强制项与本基线的取舍写入 `.ai/rules/25-alibaba-java.md`，格式仍由 Spotless 执行。
 - 门禁：`scripts/verify.sh` 的前端检查在任一命令失败时即失败。此前步骤放在 `if` 中执行，Bash 会忽略 `set -e`，类型检查失败仍可能被后面成功的 lint 记为通过。
 - 门禁：密钥扫描按内容跳过二进制文件（含空字节，或无法按 UTF-8 解码）。暂存 `.glb`、`.webp`、`.xlsx`、`.pyc` 等未列入扩展名名单的文件时，不再因 `UnicodeDecodeError` 中断提交钩子；文本文件中的密钥仍会拦截。
 - 忽略 Python 的 `__pycache__/`。

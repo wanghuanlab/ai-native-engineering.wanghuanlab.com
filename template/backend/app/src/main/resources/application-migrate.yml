@@ -6,3 +6,13 @@ spring:
     web-application-type: none
   flyway:
     enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+knife4j:
+  enable: false
+  production: true
