@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # 基线自测：用多种画像生成项目，跑完整校验，并验证门禁确实会拦截违规操作。
-# 用法：bin/selftest.sh [all|default|minimal|xinchuang]   需要 Docker、JDK 21、Node.js、pnpm、Python 3、uv 或 copier
+# 用法：bin/selftest.sh [all|default|minimal|xinchuang|source]
+#   source  只跑基线来源与 copier update（不需要 Docker / JDK / pnpm）
+#   其余    需要 Docker、JDK 21、Node.js、pnpm、Python 3、uv 或 copier
 # 发布基线版本前必须全部通过。
 set -euo pipefail
 
@@ -105,6 +107,9 @@ Path("notes.txt").write_text("普通说明，没有密钥\n", encoding="utf-8")'
   esac
 }
 
+# 维护者自测仍把本地检出目录交给 Copier，这样未提交的模板改动也会进生成结果。
+# 因此 generate 写进项目的 _src_path 是本机路径。团队创建项目必须走 bin/new-project，
+# 来源地址的行为由 source 目标覆盖。
 generate() {
   local name="$1"
   shift
@@ -220,7 +225,143 @@ EOF
   git reset -q --hard && git clean -qfd -e node_modules
 }
 
+source_tests() {
+  echo "▶ 基线来源与 copier update"
+  local start src dest src_url
+  start="$(pwd)"
+  cd "${BASELINE_DIR}"
+  python3 - <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("template/scripts").resolve()))
+from lib.baseline_source import classify_source, sanitize_git_url, source_problem
+from lib.proc import maven_argv, prepare_command
+from upgrade_path import versions_in_use
+assert classify_source(r"C:\Users\a\repo") == "local"
+assert classify_source("../baseline") == "local"
+assert classify_source("/tmp/baseline-not-here") == "local"
+assert classify_source("baseline") == "local"
+assert classify_source("https://github.com/org/repo.git") == "git"
+assert classify_source("git@github.com:org/repo.git") == "git"
+assert classify_source("git+file:///tmp/repo") == "git"
+cleaned = sanitize_git_url("https://x-access-token:SECRET@github.com/org/repo.git")
+assert cleaned == "https://github.com/org/repo.git"
+assert "SECRET" not in cleaned
+assert source_problem("/Users/me/baseline")
+assert source_problem("https://github.com/org/repo.git") is None
+assert prepare_command(["pnpm", "-s", "test"], windows=True)[:2] == ["cmd", "/c"]
+assert maven_argv(["test"], windows=False)[0] == "./mvnw"
+assert "mvnw.cmd" in maven_argv(["spotless:check", "test"], windows=True)
+text = "## 在用版本\n\n- v1.2.0（现场）\n- v1.2.0（重复）\n\n## 部署记录\n- v9.9.9\n"
+assert versions_in_use(text) == ["v1.2.0"]
+print("  ✓ 来源判断与 Windows 命令拼装")
+PY
+
+  src="$(mktemp -d "${TMPDIR:-/tmp}/baseline-src.XXXXXX")"
+  dest="$(mktemp -d "${TMPDIR:-/tmp}/baseline-dst.XXXXXX")"
+  git clone --quiet "${BASELINE_DIR}" "${src}/repo"
+  git -C "${src}/repo" config user.name selftest
+  git -C "${src}/repo" config user.email selftest@example.com
+  git -C "${src}/repo" tag -a v0.1.0 -m v0.1.0
+  printf '\n# selftest-marker-v0.2.0\n' >>"${src}/repo/template/scripts/verify.sh"
+  git -C "${src}/repo" add template/scripts/verify.sh
+  git -C "${src}/repo" commit -q -m "chore: 基线来源自测标记"
+  git -C "${src}/repo" tag -a v0.2.0 -m v0.2.0
+  src_url="git+file://${src}/repo"
+  python3 "${BASELINE_DIR}/bin/new_project.py" "${dest}/proj" v0.1.0 --source "${src_url}" --defaults \
+    -d project_code=park -d project_name=智慧园区 -d tech_lead=selftest
+  python3 - "${dest}/proj/.baseline/copier-answers.yml" "${src_url}" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("template/scripts").resolve()))
+from lib.baseline_source import classify_source, read_src_path
+recorded = read_src_path(Path(sys.argv[1]).read_text(encoding="utf-8"))
+if not recorded or classify_source(recorded) != "git":
+    raise SystemExit(f"记录的来源不是 Git 地址：{recorded}")
+if recorded.startswith(("/", ".")) or (len(recorded) > 2 and recorded[1] == ":"):
+    raise SystemExit(f"记录的来源仍是本机路径：{recorded}")
+print("  ✓ 创建项目记录的是 Git 地址")
+PY
+  git -C "${dest}/proj" config user.name selftest
+  git -C "${dest}/proj" config user.email selftest@example.com
+  git -C "${dest}/proj" add -A
+  git -C "${dest}/proj" commit -q -m "chore(baseline): 初始化项目" -m "Refs: BASELINE-v0.1.0"
+  printf '\n项目自有内容\n' >>"${dest}/proj/README.md"
+  git -C "${dest}/proj" add README.md
+  git -C "${dest}/proj" commit -q -m "docs: 项目自有说明" -m "Refs: REQ-20261021-baseline-source"
+  set +e
+  out="$(python3 "${dest}/proj/scripts/sync_baseline.py" v0.2.0 --source "file:///tmp/baseline-does-not-exist-xyz" 2>&1)"
+  status=$?
+  set -e
+  if [ "${status}" -eq 0 ]; then
+    rm -rf "${src}" "${dest}"
+    cd "${start}"
+    die "不可达的基线来源应当失败"
+  fi
+  case "${out}" in
+    *无法访问*) ;;
+    *)
+      printf '%s\n' "${out}" >&2
+      rm -rf "${src}" "${dest}"
+      cd "${start}"
+      die "不可达的基线来源没有说明原因"
+      ;;
+  esac
+  pass "不可达的基线来源会失败并说明原因"
+  python3 - "${dest}/proj/.baseline/copier-answers.yml" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+lines = []
+for line in text.splitlines(keepends=True):
+    if line.startswith("_src_path:"):
+        nl = "\r\n" if line.endswith("\r\n") else "\n"
+        lines.append(f"_src_path: /tmp/old-local-baseline{nl}")
+    else:
+        lines.append(line)
+path.write_bytes("".join(lines).encode("utf-8"))
+PY
+  git -C "${dest}/proj" add -- .baseline/copier-answers.yml
+  BASELINE_SYNC=1 git -C "${dest}/proj" commit -q -m "chore(baseline): 写入旧的本机来源" -m "Refs: BASELINE-v0.1.0"
+  set +e
+  out="$(python3 "${dest}/proj/scripts/sync_baseline.py" v0.2.0 2>&1)"
+  status=$?
+  set -e
+  if [ "${status}" -eq 0 ]; then
+    rm -rf "${src}" "${dest}"
+    cd "${start}"
+    die "本机路径来源应当被拒绝"
+  fi
+  case "${out}" in
+    *本机路径*) ;;
+    *)
+      printf '%s\n' "${out}" >&2
+      rm -rf "${src}" "${dest}"
+      cd "${start}"
+      die "本机路径来源没有说明原因"
+      ;;
+  esac
+  pass "本机路径来源会被拒绝"
+  python3 "${dest}/proj/scripts/sync_baseline.py" v0.2.0 --source "${src_url}"
+  grep -q "selftest-marker-v0.2.0" "${dest}/proj/scripts/verify.sh"
+  grep -q "项目自有内容" "${dest}/proj/README.md"
+  python3 - "${dest}/proj/.baseline/copier-answers.yml" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("template/scripts").resolve()))
+from lib.baseline_source import classify_source, read_src_path
+recorded = read_src_path(Path(sys.argv[1]).read_text(encoding="utf-8"))
+if classify_source(recorded or "") != "git":
+    raise SystemExit(f"同步后来源不是 Git 地址：{recorded}")
+PY
+  pass "copier update 从 v0.1.0 升到 v0.2.0，项目自有文件仍在"
+  rm -rf "${src}" "${dest}"
+  cd "${start}"
+}
+
 run_default() {
+  source_tests
   generate default
   verify_full
   gate_tests
@@ -244,8 +385,9 @@ case "${TARGET}" in
   default) run_default ;;
   minimal) run_minimal ;;
   xinchuang) run_xinchuang ;;
+  source) source_tests ;;
   all) run_default; run_minimal; run_xinchuang ;;
-  *) echo "用法：$0 [all|default|minimal|xinchuang]" >&2; exit 2 ;;
+  *) echo "用法：$0 [all|default|minimal|xinchuang|source]" >&2; exit 2 ;;
 esac
 echo
 echo "自测通过：${TARGET}"

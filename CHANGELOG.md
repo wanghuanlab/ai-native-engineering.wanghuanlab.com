@@ -4,6 +4,8 @@
 
 - 技术规范：集成 Knife4j。官方快速开始只覆盖 Spring Boot 3，骨架使用支持 Boot 4 的 starter，并把接入说明写入 `.ai/rules/45-knife4j.md`。`new-project` 不访问在线文档。本地文档地址 `/doc.html`，生产环境关闭。
 - 技术规范：Java 编码遵循《Java 开发手册》黄山版。强制项与本基线的取舍写入 `.ai/rules/25-alibaba-java.md`，格式仍由 Spotless 执行。
+- 基线来源：`new-project` 写入 `.baseline/copier-answers.yml` 的 `_src_path` 改为团队可访问的 Git 地址，并固定标签或提交。默认取基线仓库 `origin`（去掉 URL 中的凭据），可用 `--source` / `BASELINE_SOURCE` 与 `--ref` / `BASELINE_REF` 覆盖。`sync-baseline` 拒绝本机路径，在更新前检查远端能否访问以及引用是否存在；地址变化时先单独提交 answers 文件。
+- Windows：开发者命令（setup、verify、new-change、new-module、sync-baseline、db-schema、upgrade-path、release-pack、new-project）的逻辑集中在 Python，`.sh`、`.cmd`、`.ps1` 只负责启动。Git 钩子仍由 Git for Windows 自带的 sh 调用 Python。`.gitattributes` 约定 `.cmd` / `.ps1` 使用 CRLF。服务端 `pre-receive` 与维护者自测 `bin/selftest.sh` 仍是 Bash。
 - 门禁：`scripts/verify.sh` 的前端检查在任一命令失败时即失败。此前步骤放在 `if` 中执行，Bash 会忽略 `set -e`，类型检查失败仍可能被后面成功的 lint 记为通过。
 - 门禁：密钥扫描按内容跳过二进制文件（含空字节，或无法按 UTF-8 解码）。暂存 `.glb`、`.webp`、`.xlsx`、`.pyc` 等未列入扩展名名单的文件时，不再因 `UnicodeDecodeError` 中断提交钩子；文本文件中的密钥仍会拦截。
 - 忽略 Python 的 `__pycache__/`。

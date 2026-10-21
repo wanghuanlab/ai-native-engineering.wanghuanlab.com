@@ -63,6 +63,14 @@ AI-Assisted: claude-code
 - 类型：`feat`、`fix`、`refactor`、`perf`、`test`、`docs`、`build`、`chore`、`revert`；描述用中文。
 - `Refs` 必填，S 级也要关联需求或缺陷编号；使用了 AI 时写 `AI-Assisted`。
 
+## 命令在哪运行
+
+日常脚本的逻辑在 Python。macOS / Linux 用 `./scripts/<名>.sh`，Windows 的 PowerShell 或 cmd 用 `scripts\<名>.cmd`（`.ps1` 相同）。下面表格里的 `./scripts/verify.sh` 在 Windows 上写成 `scripts\verify.cmd`。Git 提交和推送钩子两边相同。
+
+同步基线：`./scripts/sync-baseline.sh <版本>`（Windows：`scripts\sync-baseline.cmd <版本>`）。项目记录的来源必须是团队可访问的 Git 地址加标签。若仍是创建者电脑上的目录，或要改地址，加上 `--source <Git URL>`。
+
+服务端 `pre-receive` 只安装在 Git 服务器上，用 Bash 运行，开发者本机不执行。
+
 ## 门禁一览
 
 | 时机 | 检查 | 能否绕过 |

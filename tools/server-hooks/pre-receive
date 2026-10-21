@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # 裸 Git 服务器端钩子（可选）。安装到 <仓库>.git/hooks/pre-receive 并赋予执行权限。
 #
+# 这个钩子留在服务器上，用 Bash 执行。开发者本机（含 Windows）不运行它，
+# 所以这里不提供 PowerShell / Python 入口。客户端钩子在 template/.githooks/，由 Python 实现。
+#
 # 强制以下规则（客户端钩子可被绕过，这里不能）：
 #   1. 只有技术负责人可以更新 main，且不能强制推送、不能删除 main
 #   2. 推到 main 的每个提交，提交说明必须包含 Refs: 行

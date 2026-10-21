@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
-# 用法：./scripts/new-module.sh <模块名> [--title 中文名]
-exec python3 "$(dirname "$0")/lib/new_module.py" "$@"
+# 薄封装。逻辑在 lib/new_module.py。兼容 macOS Bash 3.2 与 set -u。
+set -eu
+HERE="$(cd "$(dirname "$0")" && pwd)"
+exec "${HERE}/_py.sh" "${HERE}/lib/new_module.py" "$@"

@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
-# 提交前检查：基线托管文件、迁移脚本、密钥、AI 配置一致性。只检查暂存区，几秒内完成。
-set -euo pipefail
+#!/bin/sh
+# 提交前检查。Git for Windows 用自带 sh 启动本文件，实际检查在 Python。
+set -eu
 cd "$(git rev-parse --show-toplevel)"
-
-python3 scripts/lib/checks.py managed --staged
-python3 scripts/lib/checks.py migrations --staged
-python3 scripts/lib/checks.py secrets --staged
-python3 scripts/build-ai-config.py --check
+. scripts/lib/hooklib.sh
+py scripts/lib/checks.py managed --staged
+py scripts/lib/checks.py migrations --staged
+py scripts/lib/checks.py secrets --staged
+py scripts/build-ai-config.py --check

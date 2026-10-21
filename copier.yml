@@ -1,5 +1,6 @@
 # ai-native-engineering 项目模板配置
-# 创建项目：bin/new-project.sh <目标目录>
+# 创建项目：bin/new-project.sh <目标目录>（Windows：bin\new-project.cmd）
+# 来源默认是本仓库 origin（去掉凭据），也可用 --source / BASELINE_SOURCE 指定 Git 地址。
 # 同步升级：在项目内执行 scripts/sync-baseline.sh <基线版本标签>
 
 _min_copier_version: "9.4.0"
@@ -11,10 +12,15 @@ _envops:
 
 _message_after_copy: |
   项目 {{ project_name }}（{{ project_code }}）已生成。
-  下一步：
+  下一步（macOS / Linux）：
     cd {{ _copier_conf.dst_path }}
     ./scripts/setup.sh
     ./scripts/verify.sh quick
+  Windows（本机 PowerShell 或 cmd，不需要 WSL）：
+    cd {{ _copier_conf.dst_path }}
+    scripts\setup.cmd
+    scripts\verify.cmd quick
+  然后：
     git add -A && git commit -m "chore(baseline): 初始化项目" -m "Refs: BASELINE-<基线版本>"
   请先阅读 AGENTS.md 和 docs/context/collaboration.md。
 
@@ -38,10 +44,10 @@ _skip_if_exists:
   - "README.md"
 
 _tasks:
-  - command: "[ -d .git ] || git init -q -b main"
-  - command: "chmod +x .githooks/* scripts/*.sh backend/mvnw"
-  - command: "python3 scripts/build-ai-config.py"
-  - command: "git config core.hooksPath .githooks"
+  # 参数列表不经过 shell，Windows 路径里的空格不会被拆开。解释器是跑 Copier 的那个 Python。
+  - command:
+      - "{{ _copier_python }}"
+      - scripts/bootstrap.py
 
 project_code:
   type: str
