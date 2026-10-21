@@ -12,8 +12,18 @@ RESULTS=()
 step() {
   local name="$1"
   shift
+  local status
   echo "▶ ${name}"
-  if "$@"; then
+  # if/&&/|| 会让其中的函数忽略 set -e，多条命令时前面的失败会被最后一条成功命令掩盖。
+  # 在独立子 shell 里重新打开 set -e，任一命令失败都会让整个步骤失败。
+  set +e
+  (
+    set -e
+    "$@"
+  )
+  status=$?
+  set -e
+  if [ "${status}" -eq 0 ]; then
     RESULTS+=("✓ ${name}")
   else
     RESULTS+=("✗ ${name}")
@@ -38,17 +48,24 @@ run_backend() {
 
 run_frontend() {
   local with_build="$1"
+  # 逐条检查退出码：即使调用方把本函数放进条件表达式，也不能靠 set -e 中止。
   (
-    cd frontend
+    cd frontend || exit
     if [ ! -d node_modules ]; then
-      if [ -f pnpm-lock.yaml ]; then CI=true pnpm install --frozen-lockfile; else CI=true pnpm install; fi
+      if [ -f pnpm-lock.yaml ]; then
+        CI=true pnpm install --frozen-lockfile || exit
+      else
+        CI=true pnpm install || exit
+      fi
     fi
-    pnpm -s gen:api
-    pnpm -s typecheck
-    pnpm -s lint
-    pnpm -s format:check
-    pnpm -s test
-    if [ "${with_build}" = "build" ]; then pnpm -s build; fi
+    pnpm -s gen:api || exit
+    pnpm -s typecheck || exit
+    pnpm -s lint || exit
+    pnpm -s format:check || exit
+    pnpm -s test || exit
+    if [ "${with_build}" = "build" ]; then
+      pnpm -s build || exit
+    fi
   )
 }
 

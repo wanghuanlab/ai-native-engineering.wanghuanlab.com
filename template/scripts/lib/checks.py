@@ -134,21 +134,42 @@ SECRET_PATTERNS = [
 SECRET_SKIP = re.compile(r"(?:^|/)(?:pnpm-lock\.yaml|package-lock\.json|.*\.(?:png|jpe?g|gif|ico|pdf|jar|zip|gz|woff2?|ttf))$")
 
 
+def text_for_scan(data: bytes) -> str | None:
+    """返回可扫描的 UTF-8 文本。空字节或无法解码的内容视为二进制并跳过。"""
+    if b"\x00" in data:
+        return None
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
+def load_scan_text(path: str, staged: bool) -> str | None:
+    if staged:
+        # 不用 text=True：二进制 blob 会在解码 stdout 时抛出 UnicodeDecodeError，中断整个钩子。
+        result = subprocess.run(["git", "show", f":{path}"], cwd=ROOT, capture_output=True)
+        if result.returncode != 0:
+            return None
+        return text_for_scan(result.stdout)
+    file = ROOT / path
+    if not file.is_file():
+        return None
+    try:
+        data = file.read_bytes()
+    except OSError:
+        return None
+    return text_for_scan(data)
+
+
 def check_secrets(staged: bool) -> int:
     paths = staged_files("ACMR") if staged else [f for f in git("ls-files").splitlines() if f]
     problems = []
     for path in paths:
         if SECRET_SKIP.search(path) or path.startswith("scripts/lib/checks.py"):
             continue
-        content = git("show", f":{path}", check=False) if staged else None
+        content = load_scan_text(path, staged)
         if content is None:
-            file = ROOT / path
-            if not file.is_file():
-                continue
-            try:
-                content = file.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
-                continue
+            continue
         for lineno, line in enumerate(content.splitlines(), 1):
             for pattern, label in SECRET_PATTERNS:
                 if pattern.search(line):
