@@ -1,0 +1,154 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "质量门禁：自动检查与人工复核各自负责什么",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-quality-gates-20261023-093844/quality-gates.html",
+    "repository": {
+      "url": "git@github.com:wanghuanlab/ai-native-engineering.wanghuanlab.com.git",
+      "revision": "c4e1c3cbc552db5bf43cda273ca8628f41ae54a6",
+      "link_mode": "local-only"
+    }
+  },
+  "lanes": [
+    {
+      "id": "engineer",
+      "label": "工程师 + 自动检查"
+    },
+    {
+      "id": "lead",
+      "label": "技术负责人"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "commit",
+      "label": "本地提交",
+      "sublabel": "托管文件 · 迁移 · 密钥",
+      "lane": "engineer",
+      "col": 0,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "template/.githooks/pre-commit",
+          "line": 1,
+          "end_line": 9
+        }
+      ]
+    },
+    {
+      "id": "quick",
+      "label": "推送前 quick",
+      "sublabel": "前后端检查与单测",
+      "lane": "engineer",
+      "col": 1,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "template/scripts/verify.py",
+          "line": 31,
+          "end_line": 37
+        }
+      ]
+    },
+    {
+      "id": "full",
+      "label": "合并前 full",
+      "sublabel": "集成 · 覆盖率 · 升级",
+      "lane": "engineer",
+      "col": 2,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "template/scripts/verify.py",
+          "line": 38,
+          "end_line": 47
+        }
+      ]
+    },
+    {
+      "id": "human",
+      "label": "TL 人工复核",
+      "sublabel": "AC 证据 · 兼容 · 安全",
+      "lane": "lead",
+      "col": 2,
+      "type": "security",
+      "sources": [
+        {
+          "path": "template/docs/context/collaboration.md",
+          "line": 38,
+          "end_line": 40
+        }
+      ]
+    },
+    {
+      "id": "merge",
+      "label": "TL 合并主干",
+      "sublabel": "复核通过后合并与推送",
+      "lane": "lead",
+      "col": 3,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "template/docs/context/collaboration.md",
+          "line": 41,
+          "end_line": 49
+        }
+      ]
+    }
+  ],
+  "mainPath": [
+    "commit",
+    "quick",
+    "full",
+    "human",
+    "merge"
+  ],
+  "edges": [
+    {
+      "from": "commit",
+      "to": "quick",
+      "label": "通过"
+    },
+    {
+      "from": "quick",
+      "to": "full",
+      "label": "通过"
+    },
+    {
+      "from": "full",
+      "to": "human",
+      "label": "通过"
+    },
+    {
+      "from": "human",
+      "to": "merge",
+      "label": "通过"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "失败时",
+      "items": [
+        "返回对应任务修复并重新验证；不删测试、不跳测试、不下调质量规则。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "保障边界",
+      "items": [
+        "本地钩子可被绕过；服务端钩子需另行安装。TL 复核是流程责任，不能宣称工具天然无法绕过。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "升级检查范围",
+      "items": [
+        "当前升级脚本验证 PostgreSQL SQL 路径；信创数据库需另行验证，无在用版本时该步骤跳过。"
+      ]
+    }
+  ]
+}

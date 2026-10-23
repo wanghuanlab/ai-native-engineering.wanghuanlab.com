@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "基线与业务项目：创建、同步与文件归属",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/architecture-baseline-map-20261023-093844/baseline-map.html",
+    "repository": {
+      "url": "git@github.com:wanghuanlab/ai-native-engineering.wanghuanlab.com.git",
+      "revision": "c4e1c3cbc552db5bf43cda273ca8628f41ae54a6",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "baseline",
+      "type": "backend",
+      "label": "基线仓库",
+      "sublabel": "规范 · 模板 · 空骨架",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        180,
+        76
+      ],
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 61,
+          "end_line": 71
+        }
+      ]
+    },
+    {
+      "id": "create",
+      "type": "backend",
+      "label": "创建项目",
+      "sublabel": "new-project / Copier",
+      "pos": [
+        350,
+        40
+      ],
+      "size": [
+        180,
+        76
+      ],
+      "sources": [
+        {
+          "path": "README.md",
+          "line": 7,
+          "end_line": 36
+        }
+      ]
+    },
+    {
+      "id": "project",
+      "type": "database",
+      "label": "业务项目仓库",
+      "sublabel": "项目组独立维护",
+      "pos": [
+        660,
+        40
+      ],
+      "size": [
+        180,
+        76
+      ],
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 61,
+          "end_line": 71
+        }
+      ]
+    },
+    {
+      "id": "sync",
+      "type": "backend",
+      "label": "按版本同步",
+      "sublabel": "sync-baseline",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        180,
+        76
+      ],
+      "sources": [
+        {
+          "path": "handbook/05-基线维护指南.md",
+          "line": 42,
+          "end_line": 55
+        }
+      ]
+    },
+    {
+      "id": "managed",
+      "type": "security",
+      "label": "基线托管文件",
+      "sublabel": "规则 · Skills · 门禁",
+      "pos": [
+        350,
+        260
+      ],
+      "size": [
+        180,
+        76
+      ],
+      "sources": [
+        {
+          "path": "handbook/05-基线维护指南.md",
+          "line": 16,
+          "end_line": 24
+        }
+      ]
+    },
+    {
+      "id": "owned",
+      "type": "database",
+      "label": "项目自有文件",
+      "sublabel": "规格 · 契约 · 代码 · 迁移",
+      "pos": [
+        660,
+        260
+      ],
+      "size": [
+        180,
+        76
+      ],
+      "sources": [
+        {
+          "path": "handbook/05-基线维护指南.md",
+          "line": 16,
+          "end_line": 24
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "baseline",
+      "to": "create",
+      "label": "复制骨架"
+    },
+    {
+      "from": "create",
+      "to": "project",
+      "label": "初始化"
+    },
+    {
+      "from": "baseline",
+      "to": "sync",
+      "label": "发布版本"
+    },
+    {
+      "from": "sync",
+      "to": "managed",
+      "label": "更新"
+    },
+    {
+      "from": "managed",
+      "to": "project",
+      "label": "随项目生效"
+    },
+    {
+      "from": "project",
+      "to": "owned",
+      "label": "自主演进"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "共同维护的文件",
+      "items": [
+        "POM 与前端包清单等由 Copier 三方合并；冲突由人处理。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "图的范围",
+      "items": [
+        "这是文件治理架构，非应用部署拓扑。骨架创建后归项目；规则和工具持续同步。"
+      ]
+    }
+  ]
+}

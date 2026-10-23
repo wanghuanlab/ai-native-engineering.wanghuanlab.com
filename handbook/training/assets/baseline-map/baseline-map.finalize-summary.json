@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/architecture-baseline-map-20261023-093844/candidate.json",
+    "sha256": "ffec28c8f23f227c66765dae0d434c6e9ecb7547999ae6a7caf5ca4a6abb229c",
+    "bytes": 3770
+  },
+  "artifact": {
+    "path": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/architecture-baseline-map-20261023-093844/baseline-map.html",
+    "sha256": "63125c092fca45fd12587069fd1dad37520c5e3f5b6123a70e3ccc353e7ad8b4",
+    "bytes": 814795
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/architecture-baseline-map-20261023-093844/review-2/baseline-map.finalize.json",
+    "summaryReceipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/architecture-baseline-map-20261023-093844/review-2/baseline-map.finalize-summary.json",
+    "browserCheckReceipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/architecture-baseline-map-20261023-093844/review-2/baseline-map.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3466
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-delivery-flow-20261023-093844/candidate.json",
+    "sha256": "afd4fdb8f65a0faf4dcc1f5ab55495b9bcd4ef2d70d05a70f8e4536b2c2ed847",
+    "bytes": 6100
+  },
+  "artifact": {
+    "path": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-delivery-flow-20261023-093844/delivery-flow.html",
+    "sha256": "10c53c55bd58693197ae60fa3375c502d2b8474e0454679dfed34f41a54361eb",
+    "bytes": 821426
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-delivery-flow-20261023-093844/review-2/delivery-flow.finalize.json",
+    "summaryReceipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-delivery-flow-20261023-093844/review-2/delivery-flow.finalize-summary.json",
+    "browserCheckReceipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-delivery-flow-20261023-093844/review-2/delivery-flow.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-16T01:58:15.372Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2260
+}

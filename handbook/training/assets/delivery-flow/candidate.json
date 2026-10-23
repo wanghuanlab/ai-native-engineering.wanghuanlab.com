@@ -1,0 +1,290 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "一个需求从入库到交付：M / L 级标准流程",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-delivery-flow-20261023-093844/delivery-flow.html",
+    "repository": {
+      "url": "git@github.com:wanghuanlab/ai-native-engineering.wanghuanlab.com.git",
+      "revision": "c4e1c3cbc552db5bf43cda273ca8628f41ae54a6",
+      "link_mode": "local-only"
+    }
+  },
+  "lanes": [
+    {
+      "id": "prepare",
+      "label": "明确需求"
+    },
+    {
+      "id": "build",
+      "label": "计划与实现"
+    },
+    {
+      "id": "ship",
+      "label": "复核与交付"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "intake",
+      "label": "需求入库",
+      "sublabel": "req-intake",
+      "lane": "prepare",
+      "col": 0,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 127,
+          "end_line": 128
+        }
+      ]
+    },
+    {
+      "id": "clarify",
+      "label": "澄清问题",
+      "sublabel": "工程师向 PM 求证",
+      "lane": "prepare",
+      "col": 1,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 127,
+          "end_line": 128
+        }
+      ]
+    },
+    {
+      "id": "spec",
+      "label": "规格与验收标准",
+      "sublabel": "spec-change",
+      "lane": "prepare",
+      "col": 2,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 129,
+          "end_line": 129
+        }
+      ]
+    },
+    {
+      "id": "pm",
+      "label": "PM 确认",
+      "sublabel": "工程师登记确认记录",
+      "lane": "prepare",
+      "col": 3,
+      "type": "security",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 149,
+          "end_line": 157
+        }
+      ]
+    },
+    {
+      "id": "design",
+      "label": "设计与计划",
+      "sublabel": "change-design",
+      "lane": "build",
+      "col": 3,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 130,
+          "end_line": 130
+        }
+      ]
+    },
+    {
+      "id": "tl-design",
+      "label": "L 级审批",
+      "sublabel": "M 级无需设计审批",
+      "lane": "build",
+      "col": 2,
+      "type": "security",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 110,
+          "end_line": 114
+        }
+      ]
+    },
+    {
+      "id": "implement",
+      "label": "迁移与实现",
+      "sublabel": "db-migration / implement",
+      "lane": "build",
+      "col": 1,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 131,
+          "end_line": 131
+        }
+      ]
+    },
+    {
+      "id": "accept",
+      "label": "测试与验收",
+      "sublabel": "test-accept · 工程师验收",
+      "lane": "build",
+      "col": 0,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 132,
+          "end_line": 132
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "label": "自审与 TL 复核",
+      "sublabel": "self-review · full",
+      "lane": "ship",
+      "col": 0,
+      "type": "security",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 133,
+          "end_line": 133
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "label": "发布打包",
+      "sublabel": "TL 发起 release-pack",
+      "lane": "ship",
+      "col": 1,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 134,
+          "end_line": 134
+        }
+      ]
+    },
+    {
+      "id": "deploy",
+      "label": "部署与回执",
+      "sublabel": "运维执行并回填台账",
+      "lane": "ship",
+      "col": 2,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 135,
+          "end_line": 135
+        }
+      ]
+    },
+    {
+      "id": "archive",
+      "label": "规格归档",
+      "sublabel": "更新 specs · 归档变更包",
+      "lane": "ship",
+      "col": 3,
+      "type": "backend",
+      "sources": [
+        {
+          "path": "handbook/00-方案全文.md",
+          "line": 136,
+          "end_line": 136
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "flow-0",
+      "from": "intake",
+      "to": "clarify"
+    },
+    {
+      "id": "flow-1",
+      "from": "clarify",
+      "to": "spec"
+    },
+    {
+      "id": "flow-2",
+      "from": "spec",
+      "to": "pm"
+    },
+    {
+      "id": "flow-3",
+      "from": "pm",
+      "to": "design",
+      "label": "确认后"
+    },
+    {
+      "id": "flow-4",
+      "from": "design",
+      "to": "tl-design",
+      "label": "按分级",
+      "role": "return"
+    },
+    {
+      "id": "flow-5",
+      "from": "tl-design",
+      "to": "implement",
+      "label": "L 已批 / M 就绪",
+      "role": "return"
+    },
+    {
+      "id": "flow-6",
+      "from": "implement",
+      "to": "accept",
+      "role": "return"
+    },
+    {
+      "id": "flow-7",
+      "from": "accept",
+      "to": "review"
+    },
+    {
+      "id": "flow-8",
+      "from": "review",
+      "to": "release"
+    },
+    {
+      "id": "flow-9",
+      "from": "release",
+      "to": "deploy"
+    },
+    {
+      "id": "flow-10",
+      "from": "deploy",
+      "to": "archive"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "人工确认不能省略",
+      "items": [
+        "PM 确认业务规则和验收标准；L 级设计由 TL 审批；工程师承担业务验收。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "分级与返工",
+      "items": [
+        "S 级可免变更包，但保留 Refs 与 TL 复核。规格矛盾退回澄清；门禁失败回到对应任务修复。"
+      ]
+    }
+  ]
+}

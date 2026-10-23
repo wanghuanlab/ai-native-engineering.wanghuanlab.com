@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "bb737c2b-2f4a-457f-b349-40c8942fd382",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-quality-gates-20261023-093844/candidate.json",
+  "output": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-quality-gates-20261023-093844/quality-gates.html",
+  "specification": {
+    "sha256": "6d9fb9c08b606485831f57484ec6a040eeb8e54c1aa6f8253ed2763eb6f4fddb",
+    "bytes": 3417
+  },
+  "artifact": {
+    "sha256": "9403595f3f7d87a7a83c9fd986902d8157df3037e66c9b694df701c925fa2183",
+    "bytes": 810698
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d4d7e31c-5212-4805-92a6-6e448e5727b4",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/architecture-baseline-map-20261023-093844/candidate.json",
+  "output": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/architecture-baseline-map-20261023-093844/baseline-map.html",
+  "specification": {
+    "sha256": "ffec28c8f23f227c66765dae0d434c6e9ecb7547999ae6a7caf5ca4a6abb229c",
+    "bytes": 3770
+  },
+  "artifact": {
+    "sha256": "63125c092fca45fd12587069fd1dad37520c5e3f5b6123a70e3ccc353e7ad8b4",
+    "bytes": 814795
+  }
+}

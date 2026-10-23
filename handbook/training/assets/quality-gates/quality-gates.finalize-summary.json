@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-quality-gates-20261023-093844/candidate.json",
+    "sha256": "6d9fb9c08b606485831f57484ec6a040eeb8e54c1aa6f8253ed2763eb6f4fddb",
+    "bytes": 3417
+  },
+  "artifact": {
+    "path": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-quality-gates-20261023-093844/quality-gates.html",
+    "sha256": "9403595f3f7d87a7a83c9fd986902d8157df3037e66c9b694df701c925fa2183",
+    "bytes": 810698
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-quality-gates-20261023-093844/review-2/quality-gates.finalize.json",
+    "summaryReceipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-quality-gates-20261023-093844/review-2/quality-gates.finalize-summary.json",
+    "browserCheckReceipt": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-quality-gates-20261023-093844/review-2/quality-gates.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-16T01:58:15.372Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1789
+}

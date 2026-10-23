@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b05d34bb-855b-49ff-b41d-3e971baaf31c",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-delivery-flow-20261023-093844/candidate.json",
+  "output": "/Users/wanghuan/Documents/wanghuanlab/ai-native-engineering.wanghuanlab.com/.archify/workflow-delivery-flow-20261023-093844/delivery-flow.html",
+  "specification": {
+    "sha256": "afd4fdb8f65a0faf4dcc1f5ab55495b9bcd4ef2d70d05a70f8e4536b2c2ed847",
+    "bytes": 6100
+  },
+  "artifact": {
+    "sha256": "10c53c55bd58693197ae60fa3375c502d2b8474e0454679dfed34f41a54361eb",
+    "bytes": 821426
+  }
+}

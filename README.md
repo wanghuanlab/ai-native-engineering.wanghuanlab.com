@@ -4,6 +4,8 @@
 
 基线不包含业务功能，也不是公共 SDK。骨架代码在创建项目时复制一份，之后归项目所有；流程、规则、门禁脚本由基线托管，通过版本同步升级。
 
+团队培训从[使用手册](handbook/06-团队培训使用手册.md)开始，也可打开含交互架构图和流程图的[离线图文版](handbook/training/index.html)。
+
 ## 创建项目
 
 需要：Python 3.10+ 与 [uv](https://docs.astral.sh/uv/)（或 `pip install copier`）、Git、JDK 21、Docker、Node.js 22+、pnpm 11。

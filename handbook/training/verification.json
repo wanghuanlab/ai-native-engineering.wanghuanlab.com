@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-23",
+  "scope": "团队培训手册及三张 Archify 图",
+  "checks": {
+    "markdown_links": "pass",
+    "navigation_anchors": "pass",
+    "embedded_diagram_identity": "pass",
+    "diagram_finalize": "pass (validate, deliver, strict check, browser-check)",
+    "manual_script_syntax": "pass",
+    "git_diff_check": "pass",
+    "manual_visual_review": "not performed; file URL preview blocked by browser policy",
+    "baseline_selftest_all": "incomplete: source/Copier upgrade checks passed, then default frontend dependency installation failed"
+  },
+  "selftest_failure": "ERR_PNPM_NO_MATCHING_VERSION: orval@8.44.0 depends on @orval/effect@8.44.0, unavailable from configured https://registry.npmmirror.com/ (reported latest 8.43.0). No dependency or registry configuration changed."
+}
