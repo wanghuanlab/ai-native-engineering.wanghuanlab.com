@@ -6,6 +6,16 @@
 
 团队培训从[使用手册](handbook/06-团队培训使用手册.md)开始，也可打开含交互架构图和流程图的[离线图文版](handbook/training/index.html)。
 
+## 项目官网
+
+官网源码位于 [website/](website/README.md)，包含工程基线介绍、交互流程演示、快速开始和在线研发手册。
+
+```bash
+cd website
+npm ci
+npm run dev
+```
+
 ## 创建项目
 
 需要：Python 3.10+ 与 [uv](https://docs.astral.sh/uv/)（或 `pip install copier`）、Git、JDK 21、Docker、Node.js 22+、pnpm 11。

@@ -5,3 +5,7 @@
 /.selftest/
 .archify
 __pycache__/
+
+/.taste-skill/
+node_modules/
+dist/
