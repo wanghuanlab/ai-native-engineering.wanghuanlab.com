@@ -1,4 +1,9 @@
-import { currentMenuLoader, setMenuLoader } from '@/plugins/host'
+import {
+  currentMenuLoader,
+  headerActionList,
+  setHeaderActions,
+  setMenuLoader,
+} from '@/plugins/host'
 import { menusFromChildren } from '@/router/menuItems'
 import { describe, expect, it } from 'vitest'
 
@@ -24,5 +29,15 @@ describe('setMenuLoader', () => {
 
     setMenuLoader(null)
     expect(currentMenuLoader()).toBeNull()
+  })
+})
+
+describe('setHeaderActions', () => {
+  it('可以注册并清空顶栏操作', () => {
+    setHeaderActions([{ label: '退出', onClick: () => undefined }])
+    expect(headerActionList().value.map((item) => item.label)).toEqual(['退出'])
+
+    setHeaderActions([])
+    expect(headerActionList().value).toEqual([])
   })
 })

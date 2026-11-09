@@ -24,4 +24,4 @@ inserts:
   - file: deploy/local/compose.yaml
     marker: "# @plugin-services-end"
     id: services
-    content: "  # plugin:admin:services\n  redis:\n    image: redis:7-alpine\n    container_name: {{ project_code }}-redis\n    ports:\n      - \"6379:6379\"\n"
+    content: "  # plugin:admin:services\n  redis:\n    image: redis:7-alpine\n    container_name: {{ project_code }}-redis\n    ports:\n      - \"6379:6379\"\n    healthcheck:\n      test: [\"CMD\", \"redis-cli\", \"ping\"]\n      interval: 2s\n      timeout: 3s\n      retries: 30\n"

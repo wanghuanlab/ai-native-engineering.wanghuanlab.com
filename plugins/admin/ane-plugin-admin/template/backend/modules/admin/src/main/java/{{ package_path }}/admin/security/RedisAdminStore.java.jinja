@@ -44,10 +44,10 @@ public class RedisAdminStore {
         }
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        redis.opsForValue().set(refreshKey(token), Long.toString(userId), properties.getRefreshTtl());
-        redis.opsForValue().set(userKey(userId), token, properties.getRefreshTtl());
-        return token;
+        String refresh = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        redis.opsForValue().set(refreshKey(refresh), Long.toString(userId), properties.getRefreshTtl());
+        redis.opsForValue().set(userKey(userId), refresh, properties.getRefreshTtl());
+        return refresh;
     }
 
     public Long consumeRefresh(String token) {
@@ -63,9 +63,9 @@ public class RedisAdminStore {
     }
 
     public void revokeRefresh(long userId) {
-        String token = redis.opsForValue().getAndDelete(userKey(userId));
-        if (token != null) {
-            redis.delete(refreshKey(token));
+        String current = redis.opsForValue().getAndDelete(userKey(userId));
+        if (current != null) {
+            redis.delete(refreshKey(current));
         }
     }
 

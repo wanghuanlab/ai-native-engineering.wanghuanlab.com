@@ -56,10 +56,10 @@ public class AdminAuthenticationFilter extends OncePerRequestFilter {
             }
             return;
         }
-        String token = header.substring("Bearer ".length()).trim();
+        String presented = header.substring("Bearer ".length()).trim();
         JwtTokenService.ParsedAccess access;
         try {
-            access = tokens.parse(token);
+            access = tokens.parse(presented);
         } catch (JwtException | IllegalArgumentException ex) {
             throw new BizException(CommonErrorCode.UNAUTHORIZED);
         }

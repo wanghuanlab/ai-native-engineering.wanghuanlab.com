@@ -13,6 +13,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ project_code }} -d {{ project_code }}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
   # 插件的 compose 服务写在此标记之前，与 postgres 同级。
   # @plugin-services-end
 

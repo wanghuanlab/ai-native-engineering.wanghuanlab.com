@@ -476,6 +476,11 @@ admin_tests() {
   grep -q 'plugin:admin:config' backend/app/src/main/resources/application.yml || die "未插入认证插件配置标记"
   grep -q 'ane.admin.jwt-secret=' backend/app/src/main/resources/application.properties || die "未写入认证配置"
   grep -q 'plugin:admin:services' deploy/local/compose.yaml || die "未插入 Redis 服务"
+  grep -q 'redis-cli' deploy/local/compose.yaml || die "Redis 没有健康检查"
+  grep -q 'pg_isready' deploy/local/compose.yaml || die "本地数据库没有健康检查"
+  grep -q 'dev.py' scripts/dev.sh || die "dev.sh 没有调用 dev.py"
+  test -f frontend/apps/admin/src/plugins/admin/LoginView.vue || die "未注入认证插件前端"
+  grep -q 'v-perm' frontend/apps/admin/src/plugins/admin/views/UsersView.vue || die "用户页没有按钮权限"
   pg=$(basename "$(ls db/migration/postgresql/V*__admin_init.sql)")
   case "${pg}" in
     V000000000000__*) die "认证迁移脚本仍是占位版本" ;;

@@ -11,8 +11,8 @@ import {{ package_name }}.admin.web.api.AdminSessionApi;
 import {{ package_name }}.admin.web.dto.AccountDto;
 import {{ package_name }}.admin.web.dto.CaptchaDto;
 import {{ package_name }}.admin.web.dto.LoginRequestDto;
-import {{ package_name }}.admin.web.dto.LoginResultDto;
 import {{ package_name }}.admin.web.dto.RefreshRequestDto;
+import {{ package_name }}.admin.web.dto.SessionTokensDto;
 import {{ package_name }}.common.error.BizException;
 import {{ package_name }}.common.error.CommonErrorCode;
 import {{ package_name }}.common.web.Ids;
@@ -41,7 +41,7 @@ public class AdminSessionController implements AdminSessionApi {
     }
 
     @Override
-    public ResponseEntity<LoginResultDto> login(LoginRequestDto loginRequest) {
+    public ResponseEntity<SessionTokensDto> login(LoginRequestDto loginRequest) {
         AuthService.LoginTokens tokens = auth.login(
                 loginRequest.getUsername(),
                 loginRequest.getPassword(),
@@ -51,7 +51,7 @@ public class AdminSessionController implements AdminSessionApi {
     }
 
     @Override
-    public ResponseEntity<LoginResultDto> refreshSession(RefreshRequestDto refreshRequest) {
+    public ResponseEntity<SessionTokensDto> refreshSession(RefreshRequestDto refreshRequest) {
         return ResponseEntity.ok(tokens(auth.refresh(refreshRequest.getRefreshToken())));
     }
 
@@ -77,8 +77,8 @@ public class AdminSessionController implements AdminSessionApi {
         return ResponseEntity.ok(body);
     }
 
-    private static LoginResultDto tokens(AuthService.LoginTokens tokens) {
-        return new LoginResultDto()
+    private static SessionTokensDto tokens(AuthService.LoginTokens tokens) {
+        return new SessionTokensDto()
                 .accessToken(tokens.accessToken())
                 .refreshToken(tokens.refreshToken())
                 .expiresIn(tokens.expiresIn());

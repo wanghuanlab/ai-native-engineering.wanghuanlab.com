@@ -18,8 +18,9 @@ const pluginModules = import.meta.glob('./plugins/*/index.ts', { eager: true }) 
   { install?: (ctx: FrontendPluginContext) => void }
 >
 
-const app = createApp(App).use(createPinia()).use(router).use(ElementPlus, { locale: zhCn })
+const app = createApp(App).use(createPinia()).use(ElementPlus, { locale: zhCn })
+// 先注册插件路由，再安装 router。初始导航在 app.use(router) 时就开始了。
 for (const plugin of Object.values(pluginModules)) {
   plugin.install?.({ app, router })
 }
-app.mount('#app')
+app.use(router).mount('#app')

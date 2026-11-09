@@ -48,7 +48,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResult'
+                $ref: '#/components/schemas/SessionTokens'
     delete:
       tags: [AdminSession]
       operationId: logout
@@ -73,7 +73,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResult'
+                $ref: '#/components/schemas/SessionTokens'
   /api/admin/me:
     get:
       tags: [AdminSession]
@@ -428,7 +428,7 @@ components:
       properties:
         refreshToken:
           type: string
-    LoginResult:
+    SessionTokens:
       type: object
       required: [accessToken, refreshToken, expiresIn]
       properties:

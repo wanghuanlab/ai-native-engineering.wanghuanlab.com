@@ -1,0 +1,51 @@
+// 管理端只从这里引用生成的接口。页面文件因此不必再写项目代号。
+export {
+  createDept,
+  createMenu,
+  createPost,
+  createRole,
+  createUser,
+  currentAccount,
+  deleteDept,
+  deleteMenu,
+  deletePost,
+  deleteRole,
+  deleteUser,
+  issueCaptcha,
+  listDepts,
+  listMenus,
+  listPosts,
+  listRoles,
+  listUsers,
+  DataScope,
+  MenuType,
+  login,
+  logout,
+  updateDept,
+  updateMenu,
+  updatePost,
+  updateRole,
+  updateUser,
+} from '@{{ project_code }}/api-client/generated/admin'
+
+export type {
+  Account,
+  Captcha,
+  Dept,
+  DeptWrite,
+  LoginRequest,
+  MenuNode,
+  MenuWrite,
+  Post,
+  PostWrite,
+  Role,
+  RoleWrite,
+  SessionTokens,
+  User,
+  UserPage,
+  UserWrite,
+} from '@{{ project_code }}/api-client/generated/admin'
+
+export { http } from '@{{ project_code }}/api-client/http'
+
+export const projectName = '{{ project_name }}'

@@ -5,12 +5,12 @@
 ## 快速开始
 
 ```bash
-./scripts/setup.sh                                  # 检查工具、启用 Git 钩子、生成 AI 配置、安装前端依赖
-docker compose -f deploy/local/compose.yaml up -d   # 本地数据库
-(cd backend && ./mvnw -q install -DskipTests && ./mvnw -pl app spring-boot:run)  # 后端 http://localhost:8080 ，文档 http://localhost:8080/doc.html
-(cd frontend && pnpm gen:api && pnpm dev)           # 前端 http://localhost:5173
+./scripts/setup.sh                                  # 第一次：检查工具、启用 Git 钩子、生成 AI 配置、安装前端依赖
+./scripts/dev.sh                                    # 启动本地数据库（和已安装插件的 Redis），生成接口客户端，并运行前后端
 ./scripts/verify.sh quick                           # 提交前校验
 ```
+
+`dev.sh` 会等待数据库接受连接。后端启动时 Flyway 自动建表并写入初始数据。装了认证插件时，若本机 6379 已有 Redis 就直接复用。前端是 http://localhost:5173 ，后端是 http://localhost:8080 ，接口文档是 http://localhost:8080/doc.html 。
 
 需要：JDK 21、Docker、Node.js 22+、pnpm 11、Python 3.10+。
 
@@ -40,6 +40,7 @@ docker compose -f deploy/local/compose.yaml up -d   # 本地数据库
 | :--- | :--- |
 | `./scripts/new-change.sh <短名> --level M\|L` | 新建变更包 |
 | `./scripts/new-module.sh <模块名> --title <中文名>` | 新建后端模块 |
+| `./scripts/dev.sh` | 启动本地依赖和前后端 |
 | `./scripts/verify.sh quick\|full` | 校验（`full` 是 TL 合并前必跑的） |
 | `./scripts/db-schema.sh` | 更新表结构摘要 |
 | `python3 scripts/build-ai-config.py` | 修改 `.ai/` 后重新生成 AI 配置 |

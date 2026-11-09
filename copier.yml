@@ -20,7 +20,10 @@ _message_after_copy: |
     cd {{ _copier_conf.dst_path }}
     scripts\setup.cmd
     scripts\verify.cmd quick
-  然后：
+  然后启动（数据库、Redis、接口客户端和前后端）：
+    ./scripts/dev.sh
+    或 Windows：scripts\dev.cmd
+  初始化仓库：
     git add -A && git commit -m "chore(baseline): 初始化项目" -m "Refs: BASELINE-<基线版本>"
   请先阅读 AGENTS.md 和 docs/context/collaboration.md。
 

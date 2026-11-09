@@ -9,7 +9,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: { '/api': 'http://localhost:8080' },
+    // dev.py 在默认端口被占用时改 API_PROXY，让页面仍然打到本次启动的后端。
+    proxy: { '/api': process.env.API_PROXY ?? 'http://127.0.0.1:8080' },
   },
   test: {
     environment: 'jsdom',

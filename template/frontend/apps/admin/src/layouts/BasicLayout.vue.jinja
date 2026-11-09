@@ -2,16 +2,27 @@
   <el-container class="layout">
     <el-aside :width="app.sidebarCollapsed ? '64px' : '220px'" class="layout__aside">
       <div class="layout__logo">{{ '{{' }} logoText {{ '}}' }}</div>
-      <el-menu :default-active="route.path" :collapse="app.sidebarCollapsed" router>
-        <el-menu-item v-for="item in menus" :key="item.path" :index="item.path">
-          {{ '{{' }} item.title {{ '}}' }}
-        </el-menu-item>
+      <el-menu
+        :default-active="route.path"
+        :default-openeds="opened"
+        :collapse="app.sidebarCollapsed"
+        router
+      >
+        <MenuBranch :items="menus" />
       </el-menu>
     </el-aside>
     <el-container>
       <el-header class="layout__header">
         <el-button text @click="app.toggleSidebar()">{{ '{{' }} toggleText {{ '}}' }}</el-button>
-        <span>{{ '{{' }} route.meta.title {{ '}}' }}</span>
+        <span class="layout__title">{{ '{{' }} route.meta.title {{ '}}' }}</span>
+        <el-button
+          v-for="action in headerActions"
+          :key="action.label"
+          text
+          @click="action.onClick()"
+        >
+          {{ '{{' }} action.label {{ '}}' }}
+        </el-button>
       </el-header>
       <el-main>
         <router-view />
@@ -21,7 +32,8 @@
 </template>
 
 <script setup lang="ts">
-import type { MenuItem } from '@/plugins/host'
+import MenuBranch from '@/layouts/MenuBranch.vue'
+import { headerActionList, type MenuItem } from '@/plugins/host'
 import { loadMenus } from '@/router/menus'
 import { useAppStore } from '@/stores/app'
 import { computed, ref, watchEffect } from 'vue'
@@ -35,6 +47,17 @@ const logoText = computed(() => (app.sidebarCollapsed ? projectName.slice(0, 2) 
 const toggleText = computed(() => (app.sidebarCollapsed ? '展开' : '收起'))
 
 const menus = ref<MenuItem[]>([])
+const headerActions = headerActionList()
+const opened = computed(() => {
+  const parts = route.path.split('/').filter(Boolean)
+  const paths: string[] = []
+  let current = ''
+  for (const part of parts.slice(0, -1)) {
+    current += `/${part}`
+    paths.push(current)
+  }
+  return paths
+})
 watchEffect(async () => {
   menus.value = await loadMenus()
 })
@@ -43,6 +66,8 @@ watchEffect(async () => {
 <style scoped>
 .layout {
   height: 100vh;
+  background: var(--el-bg-color);
+  color: var(--el-text-color-primary);
 }
 .layout__aside {
   border-right: 1px solid var(--el-border-color-light);
@@ -61,5 +86,11 @@ watchEffect(async () => {
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid var(--el-border-color-light);
+}
+.layout__title {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>
