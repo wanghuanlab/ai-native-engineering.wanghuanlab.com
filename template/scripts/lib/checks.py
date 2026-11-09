@@ -19,6 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MIGRATION_DIR = "db/migration"
 MIGRATION_NAME = re.compile(r"^V(\d{12})__[a-z][a-z0-9]*_[a-z0-9_]+\.sql$")
+# 插件安装时写入的 Copier 答案。其余 .baseline/ 文件仍由基线托管。
+PLUGIN_ANSWERS = re.compile(r"^\.baseline/plugins/[^/]+\.ya?ml$")
 
 
 def git(*args: str, check: bool = True) -> str:
@@ -75,7 +77,7 @@ def check_managed() -> int:
         for line in (ROOT / ".baseline/managed-files.txt").read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
     ]
-    touched = [f for f in staged_files() if any(p.match(f) for p in patterns)]
+    touched = [f for f in staged_files() if not PLUGIN_ANSWERS.match(f) and any(p.match(f) for p in patterns)]
     return fail(
         "以下文件由基线托管，项目内禁止修改（同步基线请用 scripts/sync-baseline.sh；项目规则写在 .ai/project/）",
         touched,

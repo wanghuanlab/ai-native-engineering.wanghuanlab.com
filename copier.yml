@@ -41,6 +41,7 @@ _skip_if_exists:
   - "docs/adr/**"
   - "docs/releases/**"
   - ".ai/project/**"
+  - ".baseline/plugins/**"
   - "README.md"
 
 _tasks:
@@ -48,6 +49,10 @@ _tasks:
   - command:
       - "{{ _copier_python }}"
       - scripts/bootstrap.py
+  - command:
+      - "{{ _copier_python }}"
+      - scripts/plugin.py
+      - add-selected
 
 project_code:
   type: str
@@ -108,6 +113,14 @@ include_example:
   type: bool
   default: true
   help: 是否包含示例模块 example（演示分层、契约、迁移和测试写法，确认理解后可删除）
+
+plugins:
+  type: str
+  multiselect: true
+  help: 创建时装入的插件。项目建好后也可以用 scripts/plugin.sh add 再装。示例插件只用于验证机制，业务项目不要选
+  choices:
+    示例插件（仅验证插件机制）: example
+  default: []
 
 # ---- 计算变量（不提问） ----
 package_name:

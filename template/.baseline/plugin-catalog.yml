@@ -1,0 +1,4 @@
+example:
+  description: 最小示例插件，用来验证创建时引入、创建后引入和升级
+  local: plugins/example
+  git: ""
