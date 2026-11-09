@@ -1,0 +1,35 @@
+package {{ package_name }}.sample.web;
+
+import {{ package_name }}.common.security.RequiresPermission;
+import {{ package_name }}.sample.domain.SampleItem;
+import {{ package_name }}.sample.service.SampleItemService;
+import {{ package_name }}.sample.web.api.SampleItemsApi;
+import {{ package_name }}.sample.web.dto.SampleItemDto;
+import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+/** 实现契约生成的接口。未安装认证插件时权限注解全部放行。 */
+@RestController
+public class SampleItemController implements SampleItemsApi {
+
+    private final SampleItemService service;
+
+    public SampleItemController(SampleItemService service) {
+        this.service = service;
+    }
+
+    @Override
+    @RequiresPermission("sample:item:list")
+    public ResponseEntity<List<SampleItemDto>> listSampleItems() {
+        List<SampleItemDto> body =
+                service.list().stream().map(SampleItemController::toDto).toList();
+        return ResponseEntity.ok(body);
+    }
+
+    private static SampleItemDto toDto(SampleItem item) {
+        return new SampleItemDto()
+                .id(item.getId() == null ? null : item.getId().toString())
+                .title(item.getTitle());
+    }
+}

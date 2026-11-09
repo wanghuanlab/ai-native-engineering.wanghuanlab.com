@@ -159,6 +159,13 @@ gate_tests() {
   expect_fail "修改基线托管文件" python3 scripts/lib/checks.py managed --staged
   git reset -q && git checkout -q -- scripts/verify.sh
 
+  mkdir -p .baseline/plugins
+  printf 'name: example\n' >.baseline/plugins/example.yml
+  git add .baseline/plugins/example.yml
+  python3 scripts/lib/checks.py managed --staged && pass "插件答案文件可以提交"
+  git reset -q
+  rm -f .baseline/plugins/example.yml
+
   echo 'db.password = "Sup3rS3cretValue"' >leak.properties
   git add leak.properties
   expect_fail "提交明文密码" python3 scripts/lib/checks.py secrets --staged
@@ -360,6 +367,115 @@ PY
   cd "${start}"
 }
 
+plugin_marker_count() {
+  grep -c 'plugin:example:module' backend/pom.xml
+}
+
+assert_plugin_installed() {
+  local sql base
+  [ -f .baseline/plugins/example.yml ] || die "没有写下插件答案"
+  grep -q 'migration_version:' .baseline/plugins/example.yml || die "插件答案没有迁移版本"
+  [ "$(plugin_marker_count)" -eq 1 ] || die "父 POM 插入点不是恰好一处"
+  grep -q 'plugin:example:dependency' backend/app/pom.xml || die "app 未依赖示例插件"
+  grep -q 'plugin:example:config' backend/app/src/main/resources/application.yml || die "未插入插件配置"
+  grep -q 'plugin:example:services' deploy/local/compose.yaml || die "未插入 compose 标记"
+  [ -f frontend/apps/admin/src/plugins/example/SampleView.vue ] || die "缺少示例插件页面"
+  sql=$(ls db/migration/postgresql/V*__sample_create_item.sql)
+  base=$(basename "${sql}")
+  case "${base}" in
+    V000000000000__*) die "迁移脚本仍是占位版本" ;;
+    V[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]__sample_create_item.sql) ;;
+    *) die "迁移脚本文件名不符合安装时刻：${base}" ;;
+  esac
+  python3 scripts/lib/checks.py migrations
+  pass "插件文件、迁移版本和方言检查"
+}
+
+plugin_tests() {
+  echo "▶ 插件：创建后引入"
+  python3 scripts/plugin.py self-check
+  ./scripts/plugin.sh add example
+  assert_plugin_installed
+  ./scripts/plugin.sh add example
+  [ "$(plugin_marker_count)" -eq 1 ] || die "重复安装插入了两次"
+  pass "重复安装不产生重复内容"
+  ./scripts/verify.sh full
+  pass "装入示例插件后 full 通过"
+
+  echo "▶ 插件：升级"
+  git reset -q --hard
+  git clean -qfd -e node_modules
+  local src
+  src="$(mktemp -d "${TMPDIR:-/tmp}/baseline-plugin.XXXXXX")"
+  mkdir -p "${src}/repo"
+  cp -R "${BASELINE_DIR}/plugins/example/." "${src}/repo/"
+  git -C "${src}/repo" init -q -b main
+  git -C "${src}/repo" config user.name selftest
+  git -C "${src}/repo" config user.email selftest@example.com
+  git -C "${src}/repo" add -A
+  git -C "${src}/repo" commit -q -m "chore: example plugin v0.1.0"
+  git -C "${src}/repo" tag v0.1.0
+  python3 - "${src}/repo/template/frontend/apps/admin/src/plugins/example/SampleView.vue" <<'PY'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+path.write_text(path.read_text(encoding="utf-8").replace("sample-plugin-v1", "sample-plugin-v2"), encoding="utf-8")
+PY
+  git -C "${src}/repo" add -A
+  git -C "${src}/repo" commit -q -m "chore: example plugin v0.2.0"
+  git -C "${src}/repo" tag v0.2.0
+  ./scripts/plugin.sh add example --source "${src}/repo" --ref v0.1.0
+  grep -q 'sample-plugin-v1' frontend/apps/admin/src/plugins/example/SampleView.vue || die "升级前不是 v0.1.0 的页面"
+  git add -A
+  git commit -q -m "feat(sample): 安装示例插件" -m "Refs: BASELINE-v0.0.0"
+  ./scripts/plugin.sh update example v0.2.0
+  grep -q 'sample-plugin-v2' frontend/apps/admin/src/plugins/example/SampleView.vue || die "升级后页面没有变成 v0.2.0"
+  grep -q 'sample-plugin-v1' frontend/apps/admin/src/plugins/example/SampleView.vue && die "升级后仍保留 v0.1.0 标记"
+  pass "从 v0.1.0 升级到 v0.2.0"
+  rm -rf "${src}"
+
+  echo "▶ 插件：Windows 入口"
+  ./scripts/plugin.sh list >/dev/null
+  python3 scripts/plugin.py list >/dev/null
+  grep -q 'plugin.py' scripts/plugin.sh || die "plugin.sh 没有调用 plugin.py"
+  grep -q 'plugin.py' scripts/plugin.cmd || die "plugin.cmd 没有调用 plugin.py"
+  grep -q 'plugin.py' scripts/plugin.ps1 || die "plugin.ps1 没有调用 plugin.py"
+  if command -v pwsh >/dev/null 2>&1; then
+    pwsh -NoProfile -File scripts/plugin.ps1 list >/dev/null
+    pass "PowerShell 入口可列出插件"
+  else
+    pass "当前环境没有 pwsh，已核对 .cmd/.ps1 与 .sh 指向同一脚本"
+  fi
+
+  echo "▶ 插件：创建时引入"
+  local here dest
+  here="$(pwd)"
+  dest="${WORK}/plugin-at-create"
+  rm -rf "${dest}"
+  "${COPIER[@]}" copy --trust --defaults --quiet -d project_code=park -d project_name=智慧园区 \
+    -d tech_lead=selftest -d 'plugins=["example"]' "${BASELINE_DIR}" "${dest}"
+  cd "${dest}"
+  assert_plugin_installed
+  ./scripts/verify.sh backend
+  pass "创建项目时勾选示例插件"
+  cd "${here}"
+}
+
+plugin_dialect_tests() {
+  echo "▶ 插件：信创画像的迁移脚本"
+  ./scripts/plugin.sh add example
+  local pg dm
+  pg=$(basename "$(ls db/migration/postgresql/V*__sample_create_item.sql)")
+  dm=$(basename "$(ls db/migration/dm/V*__sample_create_item.sql)")
+  [ "${pg}" = "${dm}" ] || die "达梦迁移脚本文件名与 PostgreSQL 不一致"
+  if ls db/migration/kingbase/V*__sample_create_item.sql >/dev/null 2>&1; then
+    die "未启用金仓时不应生成金仓脚本"
+  fi
+  python3 scripts/lib/checks.py migrations
+  pass "示例插件在达梦画像下方言一致"
+  git reset -q --hard
+  git clean -qfd -e node_modules
+}
+
 run_default() {
   source_tests
   generate default
@@ -367,6 +483,7 @@ run_default() {
   gate_tests
   scaffold_tests
   upgrade_tests
+  plugin_tests
 }
 
 run_minimal() {
@@ -378,6 +495,7 @@ run_xinchuang() {
   generate xinchuang -d enable_xinchuang=true -d xinchuang_db=dm -d enable_screen=true -d security_level=restricted
   verify_full
   gate_tests
+  plugin_dialect_tests
 }
 
 mkdir -p "${WORK}"

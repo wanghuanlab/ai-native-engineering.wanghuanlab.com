@@ -1,0 +1,16 @@
+-- 示例插件。方言：达梦 DM8（类型映射待第 0 阶段验证确认）
+-- 回退方式：DROP TABLE sample_item;
+
+CREATE TABLE sample_item (
+    id          BIGINT                   NOT NULL,
+    title       VARCHAR(64)              NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by  BIGINT                   NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by  BIGINT                   NOT NULL,
+    version     INTEGER                  DEFAULT 0 NOT NULL,
+    deleted     BIT                      DEFAULT 0 NOT NULL,
+    CONSTRAINT pk_sample_item PRIMARY KEY (id)
+);
+
+COMMENT ON TABLE sample_item IS '示例插件条目';

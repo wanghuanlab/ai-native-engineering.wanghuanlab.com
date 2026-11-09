@@ -1,0 +1,35 @@
+package {{ package_name }}.sample.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 示例插件的一条记录，用来证明插件模块能随迁移脚本一起装入。 */
+@Entity
+@Table(name = "sample_item")
+@SoftDelete(columnName = "deleted")
+public class SampleItem extends BaseEntity {
+
+    @Column(nullable = false, length = 64)
+    private String title;
+
+    protected SampleItem() {}
+
+    /**
+     * 新建一条示例记录。
+     *
+     * @param title 标题
+     * @return 尚未持久化的记录
+     */
+    public static SampleItem create(String title) {
+        SampleItem item = new SampleItem();
+        item.title = title;
+        return item;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+}

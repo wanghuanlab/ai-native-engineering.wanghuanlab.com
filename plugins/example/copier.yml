@@ -1,0 +1,41 @@
+# 最小示例插件。业务项目不要安装；它只用来验证插件机制。
+_min_copier_version: "9.4.0"
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .baseline/plugins/example.yml
+_envops:
+  keep_trailing_newline: true
+
+# 这些值由 scripts/plugin.py 传入。保留默认值，这样 --defaults 不会交互提问。
+# 不能写 when: false，否则 Copier 不把答案记入答案文件，升级时会丢失迁移版本。
+project_code:
+  type: str
+  default: ""
+
+project_name:
+  type: str
+  default: ""
+
+package_root:
+  type: str
+  default: ""
+
+package_name:
+  type: str
+  default: ""
+
+package_path:
+  type: str
+  default: ""
+
+dialects:
+  type: str
+  default: postgresql
+
+migration_version:
+  type: str
+  default: "000000000000"
+
+migration_version_2:
+  type: str
+  default: "000000000001"

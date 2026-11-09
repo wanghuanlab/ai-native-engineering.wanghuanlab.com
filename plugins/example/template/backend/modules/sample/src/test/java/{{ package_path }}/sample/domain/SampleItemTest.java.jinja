@@ -1,0 +1,15 @@
+package {{ package_name }}.sample.domain;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+
+class SampleItemTest {
+
+    @Test
+    void createKeepsTitle() {
+        SampleItem item = SampleItem.create("第一条");
+
+        assertThat(item.getTitle()).isEqualTo("第一条");
+    }
+}

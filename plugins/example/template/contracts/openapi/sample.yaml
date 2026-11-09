@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  title: 示例插件
+  version: 1.0.0
+  description: 插件机制的最小契约，不是业务功能。
+servers:
+  - url: /
+tags:
+  - name: SampleItems
+    description: 示例插件条目
+paths:
+  /api/sample/items:
+    get:
+      tags: [SampleItems]
+      operationId: listSampleItems
+      summary: 查询示例条目
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SampleItem'
+components:
+  schemas:
+    SampleItem:
+      type: object
+      required: [id, title]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        title:
+          type: string
+          maxLength: 64

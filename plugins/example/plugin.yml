@@ -1,0 +1,27 @@
+name: example
+version: 0.1.0
+summary: 最小示例插件，验证模块、页面和迁移脚本能一起装入
+baseline:
+  min: "0.1.0"
+requires: []
+inserts:
+  - file: backend/pom.xml
+    marker: "<!-- @modules-end -->"
+    id: module
+    content: "        <!-- plugin:example:module -->\n        <module>modules/sample</module>\n"
+  - file: backend/app/pom.xml
+    marker: "<!-- @module-deps-end -->"
+    id: dependency
+    content: "        <!-- plugin:example:dependency -->\n        <dependency>\n            <groupId>{{ package_name }}</groupId>\n            <artifactId>{{ project_code }}-module-sample</artifactId>\n            <version>${project.version}</version>\n        </dependency>\n"
+  - file: docs/context/architecture.md
+    marker: "<!-- @module-table-end -->"
+    id: module-row
+    content: "<!-- plugin:example:module-row -->\n| `sample` | 示例插件 | B98xx | 验证插件机制的最小模块 |\n"
+  - file: backend/app/src/main/resources/application.yml
+    marker: "# @plugin-config-end"
+    id: config
+    content: "# plugin:example:config\nane:\n  sample:\n    enabled: true\n"
+  - file: deploy/local/compose.yaml
+    marker: "# @plugin-services-end"
+    id: services
+    content: "  # plugin:example:services\n  # 示例插件不需要额外容器\n"

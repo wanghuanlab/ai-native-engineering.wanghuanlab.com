@@ -1,0 +1,28 @@
+package {{ package_name }}.sample.service;
+
+import {{ package_name }}.sample.domain.SampleItem;
+import {{ package_name }}.sample.domain.SampleItemRepository;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** 示例插件的应用服务。只提供查询，用来走通模块装配。 */
+@Service
+@Transactional(readOnly = true)
+public class SampleItemService {
+
+    private final SampleItemRepository repository;
+
+    public SampleItemService(SampleItemRepository repository) {
+        this.repository = repository;
+    }
+
+    /**
+     * 全部未删除的示例记录。
+     *
+     * @return 记录列表，可能为空
+     */
+    public List<SampleItem> list() {
+        return repository.findAll();
+    }
+}
