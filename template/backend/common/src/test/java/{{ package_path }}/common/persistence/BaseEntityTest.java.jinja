@@ -1,0 +1,22 @@
+package {{ package_name }}.common.persistence;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+
+class BaseEntityTest {
+
+    @Test
+    void auditFieldsStartEmpty() {
+        Sample row = new Sample();
+
+        assertThat(row.getId()).isNull();
+        assertThat(row.getCreatedAt()).isNull();
+        assertThat(row.getCreatedBy()).isNull();
+        assertThat(row.getUpdatedAt()).isNull();
+        assertThat(row.getUpdatedBy()).isNull();
+        assertThat(row.getVersion()).isNull();
+    }
+
+    private static final class Sample extends BaseEntity {}
+}

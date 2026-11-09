@@ -1,0 +1,21 @@
+package {{ package_name }}.common.security;
+
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+
+/** 容器里还没有 {@link PermissionChecker} 时，注册全部放行的实现。 */
+@AutoConfiguration
+public class PermissionAutoConfiguration {
+
+    /**
+     * 默认权限判断。认证插件提供自己的 {@link PermissionChecker} 后，这个 bean 不会创建。
+     *
+     * @return 全部放行的权限判断
+     */
+    @Bean
+    @ConditionalOnMissingBean(PermissionChecker.class)
+    public PermissionChecker allowAllPermissionChecker() {
+        return new AllowAllPermissionChecker();
+    }
+}

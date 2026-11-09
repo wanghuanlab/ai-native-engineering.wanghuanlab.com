@@ -1,0 +1,30 @@
+package {{ package_name }}.common.security;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+class CurrentUserTest {
+
+    @AfterEach
+    void reset() {
+        CurrentUser.clear();
+    }
+
+    @Test
+    void usesSystemUserWhenUnset() {
+        assertThat(CurrentUser.id()).isEqualTo(CurrentUser.SYSTEM_USER_ID);
+    }
+
+    @Test
+    void remembersTheUserUntilCleared() {
+        CurrentUser.set(8L);
+
+        assertThat(CurrentUser.id()).isEqualTo(8L);
+
+        CurrentUser.clear();
+
+        assertThat(CurrentUser.id()).isEqualTo(CurrentUser.SYSTEM_USER_ID);
+    }
+}

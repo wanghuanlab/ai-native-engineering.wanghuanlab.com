@@ -1,0 +1,39 @@
+package {{ package_name }}.common.security;
+
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+/** 进入控制器方法前检查 {@link RequiresPermission}。没有该注解的接口不检查。 */
+@Component
+public class PermissionInterceptor implements HandlerInterceptor {
+
+    private final PermissionChecker checker;
+
+    public PermissionInterceptor(PermissionChecker checker) {
+        this.checker = checker;
+    }
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if (handler instanceof HandlerMethod method) {
+            RequiresPermission required = permissionOf(method);
+            if (required != null && !checker.hasPermission(required.value())) {
+                throw new BizException(CommonErrorCode.FORBIDDEN);
+            }
+        }
+        return true;
+    }
+
+    private static RequiresPermission permissionOf(HandlerMethod method) {
+        RequiresPermission onMethod = method.getMethodAnnotation(RequiresPermission.class);
+        if (onMethod != null) {
+            return onMethod;
+        }
+        return method.getBeanType().getAnnotation(RequiresPermission.class);
+    }
+}

@@ -1,0 +1,18 @@
+package {{ package_name }}.common.persistence;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.hibernate.generator.EventTypeSets;
+import org.junit.jupiter.api.Test;
+
+class SnowflakeIdGeneratorTest {
+
+    @Test
+    void keepsAnExistingIdAndAssignsOneWhenMissing() {
+        SnowflakeIdGenerator generator = new SnowflakeIdGenerator();
+
+        assertThat(generator.generate(null, null, 5L, null)).isEqualTo(5L);
+        assertThat(generator.generate(null, null, null, null)).isInstanceOf(Long.class);
+        assertThat(generator.getEventTypes()).isEqualTo(EventTypeSets.INSERT_ONLY);
+    }
+}

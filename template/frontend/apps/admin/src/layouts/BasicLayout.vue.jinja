@@ -21,9 +21,10 @@
 </template>
 
 <script setup lang="ts">
-import { routes } from '@/router'
+import type { MenuItem } from '@/plugins/host'
+import { loadMenus } from '@/router/menus'
 import { useAppStore } from '@/stores/app'
-import { computed } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 
 const app = useAppStore()
@@ -33,12 +34,10 @@ const projectName = '{{ project_name }}'
 const logoText = computed(() => (app.sidebarCollapsed ? projectName.slice(0, 2) : projectName))
 const toggleText = computed(() => (app.sidebarCollapsed ? '展开' : '收起'))
 
-const menus = computed(() =>
-  (routes[0]?.children ?? []).map((r) => ({
-    path: r.path ? `/${r.path}` : '/',
-    title: String(r.meta?.title ?? r.name ?? r.path),
-  })),
-)
+const menus = ref<MenuItem[]>([])
+watchEffect(async () => {
+  menus.value = await loadMenus()
+})
 </script>
 
 <style scoped>

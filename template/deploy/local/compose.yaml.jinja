@@ -13,6 +13,8 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+  # 插件的 compose 服务写在此标记之前，与 postgres 同级。
+  # @plugin-services-end
 
 volumes:
   pgdata:

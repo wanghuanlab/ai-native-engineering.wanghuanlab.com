@@ -1,0 +1,43 @@
+package {{ package_name }}.support;
+
+import {{ package_name }}.common.security.IntegrationTestAuthentication;
+import jakarta.servlet.Filter;
+import java.util.Map;
+import org.springframework.http.HttpHeaders;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+/**
+ * 组装集成测试的 MockMvc。安装了认证插件并提供 {@link IntegrationTestAuthentication} 时，
+ * 为每个请求附上插件给出的头；否则与直接构造 MockMvc 相同。
+ */
+public final class TestAuthentication {
+
+    private TestAuthentication() {}
+
+    /**
+     * 基于当前 Spring 上下文创建 MockMvc。
+     *
+     * @param context Web 上下文
+     * @param filters 需要显式加入的过滤器，例如追踪号过滤器
+     * @return MockMvc
+     */
+    public static MockMvc mockMvc(WebApplicationContext context, Filter... filters) {
+        var builder = MockMvcBuilders.webAppContextSetup(context);
+        if (filters.length > 0) {
+            builder.addFilters(filters);
+        }
+        Map<String, IntegrationTestAuthentication> authentications =
+                context.getBeansOfType(IntegrationTestAuthentication.class);
+        if (!authentications.isEmpty()) {
+            HttpHeaders headers = new HttpHeaders();
+            for (IntegrationTestAuthentication authentication : authentications.values()) {
+                authentication.headers().forEach(headers::add);
+            }
+            builder.defaultRequest(MockMvcRequestBuilders.get("/").headers(headers));
+        }
+        return builder.build();
+    }
+}

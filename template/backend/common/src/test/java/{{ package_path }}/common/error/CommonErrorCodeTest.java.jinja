@@ -1,0 +1,17 @@
+package {{ package_name }}.common.error;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+
+class CommonErrorCodeTest {
+
+    @Test
+    void everyCodeHasTextAndStatus() {
+        for (CommonErrorCode code : CommonErrorCode.values()) {
+            assertThat(code.code()).isNotBlank();
+            assertThat(code.message()).isNotBlank();
+            assertThat(code.status()).isNotNull();
+        }
+    }
+}

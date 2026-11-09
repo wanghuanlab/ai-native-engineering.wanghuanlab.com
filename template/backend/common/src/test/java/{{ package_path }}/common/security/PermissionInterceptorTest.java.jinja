@@ -1,0 +1,86 @@
+package {{ package_name }}.common.security;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.method.HandlerMethod;
+
+class PermissionInterceptorTest {
+
+    /** 方法上带权限注解，供拦截器读取。 */
+    static class SecuredResource {
+        /** 需要权限的处理方法。 */
+        @RequiresPermission("sample:item:list")
+        public void ping() {}
+
+        /** 不需要权限的处理方法。 */
+        public void open() {}
+    }
+
+    /** 权限注解放在类型上。 */
+    @RequiresPermission("sample:item:list")
+    static class TypeSecuredResource {
+        /** 本身没有注解的处理方法。 */
+        public void ping() {}
+    }
+
+    @Test
+    void allowsWhenNoAnnotation() throws Exception {
+        PermissionInterceptor interceptor = new PermissionInterceptor(permission -> false);
+        HandlerMethod handler = new HandlerMethod(new SecuredResource(), SecuredResource.class.getMethod("open"));
+
+        assertThat(interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), handler))
+                .isTrue();
+    }
+
+    @Test
+    void allowsWhenCheckerGrants() throws Exception {
+        PermissionInterceptor interceptor = new PermissionInterceptor(permission -> true);
+        HandlerMethod handler = new HandlerMethod(new SecuredResource(), SecuredResource.class.getMethod("ping"));
+
+        assertThat(interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), handler))
+                .isTrue();
+    }
+
+    @Test
+    void rejectsMethodAnnotationWhenCheckerDenies() throws Exception {
+        PermissionInterceptor interceptor = new PermissionInterceptor(permission -> false);
+        HandlerMethod handler = new HandlerMethod(new SecuredResource(), SecuredResource.class.getMethod("ping"));
+
+        assertThatThrownBy(() ->
+                        interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), handler))
+                .isInstanceOf(BizException.class)
+                .extracting(ex -> ((BizException) ex).errorCode())
+                .isEqualTo(CommonErrorCode.FORBIDDEN);
+    }
+
+    @Test
+    void rejectsTypeAnnotationWhenCheckerDenies() throws Exception {
+        PermissionInterceptor interceptor = new PermissionInterceptor(permission -> false);
+        HandlerMethod handler =
+                new HandlerMethod(new TypeSecuredResource(), TypeSecuredResource.class.getMethod("ping"));
+
+        assertThatThrownBy(() ->
+                        interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), handler))
+                .isInstanceOf(BizException.class);
+    }
+
+    @Test
+    void ignoresNonHandler() {
+        PermissionInterceptor interceptor = new PermissionInterceptor(permission -> false);
+
+        assertThat(interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), "not-handler"))
+                .isTrue();
+    }
+
+    @Test
+    void defaultCheckerAllowsEverything() {
+        assertThat(new AllowAllPermissionChecker().hasPermission("sample:item:list"))
+                .isTrue();
+    }
+}

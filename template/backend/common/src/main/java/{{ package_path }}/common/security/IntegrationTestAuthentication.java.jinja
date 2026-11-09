@@ -1,0 +1,17 @@
+package {{ package_name }}.common.security;
+
+import java.util.Map;
+
+/**
+ * 集成测试的登录信息。认证插件在测试配置里提供实现，并只在 test 剖面生效。
+ * 容器里没有这个 bean 时，测试不附加任何请求头。
+ */
+public interface IntegrationTestAuthentication {
+
+    /**
+     * 每个集成测试请求要带上的 HTTP 头。
+     *
+     * @return 头名称到头取值；实现应返回不可变映射
+     */
+    Map<String, String> headers();
+}

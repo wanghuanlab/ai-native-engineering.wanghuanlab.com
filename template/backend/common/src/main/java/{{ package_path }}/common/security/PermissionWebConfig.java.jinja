@@ -1,0 +1,21 @@
+package {{ package_name }}.common.security;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+/** 把权限拦截器登记到 Spring MVC。 */
+@Configuration
+public class PermissionWebConfig implements WebMvcConfigurer {
+
+    private final PermissionInterceptor interceptor;
+
+    public PermissionWebConfig(PermissionInterceptor interceptor) {
+        this.interceptor = interceptor;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(interceptor);
+    }
+}

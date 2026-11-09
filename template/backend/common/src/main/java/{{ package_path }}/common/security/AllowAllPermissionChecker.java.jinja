@@ -1,0 +1,10 @@
+package {{ package_name }}.common.security;
+
+/** 未安装认证插件时的权限判断：一律放行，让业务模块在没有插件时也能编译和运行。 */
+public final class AllowAllPermissionChecker implements PermissionChecker {
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return true;
+    }
+}

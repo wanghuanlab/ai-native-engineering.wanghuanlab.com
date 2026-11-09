@@ -1,0 +1,89 @@
+package {{ package_name }}.common.error;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import {{ package_name }}.common.web.TraceIdFilter;
+import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
+import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.context.request.ServletWebRequest;
+
+class GlobalExceptionHandlerTest {
+
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    @Test
+    void rendersBusinessAndUnexpectedErrors() {
+        MDC.put(TraceIdFilter.MDC_KEY, "trace-biz");
+        try {
+            ResponseEntity<ProblemDetail> business =
+                    handler.handleBiz(new BizException(CommonErrorCode.NOT_FOUND, "没有这条记录"));
+            assertThat(business.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            assertThat(business.getBody()).isNotNull();
+            assertThat(business.getBody().getDetail()).isEqualTo("没有这条记录");
+            assertThat(business.getBody().getProperties())
+                    .containsEntry("code", "A0404")
+                    .containsEntry("traceId", "trace-biz");
+
+            ResponseEntity<ProblemDetail> conflict = handler.handleOptimisticLock(
+                    new ObjectOptimisticLockingFailureException("conflict", new IllegalStateException("stale")));
+            assertThat(conflict.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+            ResponseEntity<ProblemDetail> unexpected = handler.handleUnexpected(new IllegalStateException("boom"));
+            assertThat(unexpected.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+            assertThat(unexpected.getBody()).isNotNull();
+            assertThat(unexpected.getBody().getProperties()).containsEntry("code", "B0001");
+        } finally {
+            MDC.remove(TraceIdFilter.MDC_KEY);
+        }
+    }
+
+    @Test
+    void rendersFieldErrorsAndSpringExceptions() throws Exception {
+        MethodParameter parameter = new MethodParameter(Sample.class.getDeclaredMethod("accept", String.class), 0);
+        BeanPropertyBindingResult binding = new BeanPropertyBindingResult(new Sample(), "sample");
+        binding.addError(new FieldError("sample", "name", "必填"));
+        binding.addError(new FieldError("sample", "title", null, false, null, null, null));
+        MethodArgumentNotValidException invalid = new MethodArgumentNotValidException(parameter, binding);
+        ServletWebRequest request = new ServletWebRequest(new MockHttpServletRequest());
+
+        ResponseEntity<Object> response =
+                handler.handleMethodArgumentNotValid(invalid, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isInstanceOf(ProblemDetail.class);
+        ProblemDetail problem = (ProblemDetail) response.getBody();
+        assertThat(problem.getProperties()).containsKey("errors");
+
+        ProblemDetail client = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        handler.handleExceptionInternal(
+                new IllegalArgumentException("bad"), client, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+        assertThat(client.getProperties()).containsEntry("code", "A0400");
+
+        ProblemDetail server = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        handler.handleExceptionInternal(
+                new IllegalStateException("down"),
+                server,
+                new HttpHeaders(),
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                request);
+        assertThat(server.getProperties()).containsEntry("code", "B0001");
+
+        handler.handleExceptionInternal(
+                new IllegalArgumentException("plain"), "plain", new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+    }
+
+    private static final class Sample {
+        @SuppressWarnings("unused")
+        void accept(String name) {}
+    }
+}

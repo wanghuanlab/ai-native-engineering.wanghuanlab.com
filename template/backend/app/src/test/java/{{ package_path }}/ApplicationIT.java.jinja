@@ -6,12 +6,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import {{ package_name }}.support.PostgresContainerConfig;
+import {{ package_name }}.support.TestAuthentication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 /** 在真实数据库上执行全部迁移，并校验所有实体与表结构一致（ddl-auto=validate）。 */
@@ -29,7 +29,7 @@ class ApplicationIT {
 
     @Test
     void knife4jExposesContract() throws Exception {
-        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        MockMvc mockMvc = TestAuthentication.mockMvc(context);
         mockMvc.perform(get("/doc.html")).andExpect(status().isOk());
         mockMvc.perform(get("/v3/api-docs/swagger-config"))
                 .andExpect(status().isOk())

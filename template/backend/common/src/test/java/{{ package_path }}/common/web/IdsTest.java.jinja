@@ -1,0 +1,26 @@
+package {{ package_name }}.common.web;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import org.junit.jupiter.api.Test;
+
+class IdsTest {
+
+    @Test
+    void parsesAndFormats() {
+        assertThat(Ids.parse("42")).isEqualTo(42L);
+        assertThat(Ids.format(7L)).isEqualTo("7");
+        assertThat(Ids.format(null)).isNull();
+    }
+
+    @Test
+    void rejectsMalformedIds() {
+        assertThatThrownBy(() -> Ids.parse("nope"))
+                .isInstanceOf(BizException.class)
+                .extracting(ex -> ((BizException) ex).errorCode())
+                .isEqualTo(CommonErrorCode.BAD_REQUEST);
+    }
+}

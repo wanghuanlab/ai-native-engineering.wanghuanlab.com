@@ -1,0 +1,16 @@
+package {{ package_name }}.common.security;
+
+/**
+ * 判断当前用户是否拥有指定权限。
+ * 认证插件注册自己的实现后，默认的全部放行实现不再创建。
+ */
+public interface PermissionChecker {
+
+    /**
+     * 当前用户是否拥有该权限。
+     *
+     * @param permission 权限标识，与 {@link RequiresPermission#value()} 相同
+     * @return 有权限时返回 true
+     */
+    boolean hasPermission(String permission);
+}

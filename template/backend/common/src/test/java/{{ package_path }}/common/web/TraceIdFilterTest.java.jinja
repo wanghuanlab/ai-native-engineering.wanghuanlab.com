@@ -1,0 +1,39 @@
+package {{ package_name }}.common.web;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import jakarta.servlet.FilterChain;
+import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+class TraceIdFilterTest {
+
+    @Test
+    void acceptsASafeIncomingTraceId() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(TraceIdFilter.HEADER, "trace-001");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain =
+                (req, res) -> assertThat(MDC.get(TraceIdFilter.MDC_KEY)).isEqualTo("trace-001");
+
+        new TraceIdFilter().doFilter(request, response, chain);
+
+        assertThat(response.getHeader(TraceIdFilter.HEADER)).isEqualTo("trace-001");
+        assertThat(MDC.get(TraceIdFilter.MDC_KEY)).isNull();
+    }
+
+    @Test
+    void replacesAnUnsafeIncomingTraceId() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(TraceIdFilter.HEADER, "bad id");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new TraceIdFilter().doFilter(request, response, (req, res) -> {});
+
+        String traceId = response.getHeader(TraceIdFilter.HEADER);
+        assertThat(traceId).hasSize(32).matches("[0-9a-f]+");
+        assertThat(MDC.get(TraceIdFilter.MDC_KEY)).isNull();
+    }
+}

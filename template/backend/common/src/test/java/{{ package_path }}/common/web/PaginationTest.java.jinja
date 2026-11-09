@@ -1,0 +1,27 @@
+package {{ package_name }}.common.web;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+class PaginationTest {
+
+    @Test
+    void appliesDefaultsAndLimits() {
+        Sort sort = Sort.by("id");
+
+        Pageable missing = Pagination.of(null, null, sort);
+        assertThat(missing.getPageNumber()).isZero();
+        assertThat(missing.getPageSize()).isEqualTo(Pagination.DEFAULT_SIZE);
+
+        Pageable first = Pagination.of(0, 0, sort);
+        assertThat(first.getPageNumber()).isZero();
+        assertThat(first.getPageSize()).isEqualTo(Pagination.DEFAULT_SIZE);
+
+        Pageable capped = Pagination.of(3, Pagination.MAX_SIZE + 50, sort);
+        assertThat(capped.getPageNumber()).isEqualTo(2);
+        assertThat(capped.getPageSize()).isEqualTo(Pagination.MAX_SIZE);
+    }
+}

@@ -1,10 +1,21 @@
 import BasicLayout from '@/layouts/BasicLayout.vue'
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 
-/** 业务路由按模块追加到 children 中，meta.title 用于菜单与页面标题 */
+const pluginModules = import.meta.glob('../plugins/*/index.ts', { eager: true }) as Record<
+  string,
+  { routes?: RouteRecordRaw[] }
+>
+
+function pluginRoutes(): RouteRecordRaw[] {
+  return Object.values(pluginModules).flatMap((plugin) => plugin.routes ?? [])
+}
+
+/** 业务路由按模块追加到 children 中，meta.title 用于菜单与页面标题。插件路由来自 src/plugins。 */
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    name: 'layout',
     component: BasicLayout,
     children: [
       {
@@ -21,6 +32,7 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '示例笔记' },
       },
 {%- endif %}
+      ...pluginRoutes(),
     ],
   },
 ]
