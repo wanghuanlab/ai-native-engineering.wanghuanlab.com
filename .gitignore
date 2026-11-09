@@ -6,6 +6,10 @@
 .archify
 __pycache__/
 
+# RuoYi 只作业务参考，不进入基线仓库
+plugins/admin/RuoYi-Vue/
+plugins/admin/RuoYi-Vue3/
+
 /.taste-skill/
 node_modules/
 dist/
