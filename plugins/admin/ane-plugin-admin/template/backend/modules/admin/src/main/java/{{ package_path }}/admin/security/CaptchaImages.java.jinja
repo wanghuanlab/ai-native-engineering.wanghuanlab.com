@@ -1,0 +1,52 @@
+package {{ package_name }}.admin.security;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.security.SecureRandom;
+import java.util.Base64;
+import javax.imageio.ImageIO;
+
+/** 生成给登录页看的验证码图片。答案本身不放进图片以外的响应。 */
+public final class CaptchaImages {
+
+    private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final int LENGTH = 4;
+
+    private CaptchaImages() {}
+
+    public static String code(SecureRandom random) {
+        StringBuilder text = new StringBuilder(LENGTH);
+        for (int i = 0; i < LENGTH; i++) {
+            text.append(ALPHABET.charAt(random.nextInt(ALPHABET.length())));
+        }
+        return text.toString();
+    }
+
+    public static String pngBase64(String code, SecureRandom random) {
+        BufferedImage image = new BufferedImage(120, 40, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        try {
+            graphics.setColor(new Color(245, 245, 240));
+            graphics.fillRect(0, 0, 120, 40);
+            graphics.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24));
+            for (int i = 0; i < code.length(); i++) {
+                graphics.setColor(new Color(20 + random.nextInt(80), 40, 40 + random.nextInt(80)));
+                graphics.drawString(code.substring(i, i + 1), 12 + i * 26, 28);
+            }
+        } finally {
+            graphics.dispose();
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "png", out);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+        return Base64.getEncoder().encodeToString(out.toByteArray());
+    }
+}

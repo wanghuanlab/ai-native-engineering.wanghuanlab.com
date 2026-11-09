@@ -1,0 +1,86 @@
+package {{ package_name }}.admin.service;
+
+import {{ package_name }}.admin.domain.AdminErrorCode;
+import {{ package_name }}.admin.domain.User;
+import {{ package_name }}.admin.domain.UserRepository;
+import {{ package_name }}.admin.security.AdminHolder;
+import {{ package_name }}.admin.security.AdminPrincipal;
+import {{ package_name }}.admin.security.AdminProperties;
+import {{ package_name }}.admin.security.JwtTokenService;
+import {{ package_name }}.admin.security.RedisAdminStore;
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+/** 验证码、登录、刷新和注销。 */
+@Service
+public class AuthService {
+
+    private final RedisAdminStore store;
+    private final UserRepository users;
+    private final PasswordEncoder passwords;
+    private final JwtTokenService tokens;
+    private final AdminProperties properties;
+
+    public AuthService(
+            RedisAdminStore store,
+            UserRepository users,
+            PasswordEncoder passwords,
+            JwtTokenService tokens,
+            AdminProperties properties) {
+        this.store = store;
+        this.users = users;
+        this.passwords = passwords;
+        this.tokens = tokens;
+        this.properties = properties;
+    }
+
+    public RedisAdminStore.IssuedCaptcha captcha() {
+        return store.issueCaptcha();
+    }
+
+    public LoginTokens login(String username, String password, String captchaId, String captchaCode) {
+        if (!store.consumeCaptcha(captchaId, captchaCode)) {
+            throw new BizException(AdminErrorCode.BAD_CAPTCHA);
+        }
+        User user = users.findByUsername(username).orElseThrow(() -> new BizException(AdminErrorCode.BAD_CREDENTIALS));
+        if (!passwords.matches(password, user.getPasswordHash())) {
+            throw new BizException(AdminErrorCode.BAD_CREDENTIALS);
+        }
+        if (!user.isEnabled()) {
+            throw new BizException(AdminErrorCode.USER_DISABLED);
+        }
+        return issue(user.getId());
+    }
+
+    public LoginTokens refresh(String refreshToken) {
+        Long userId = store.consumeRefresh(refreshToken);
+        if (userId == null) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        User user = users.findById(userId).orElseThrow(() -> new BizException(CommonErrorCode.UNAUTHORIZED));
+        if (!user.isEnabled()) {
+            throw new BizException(AdminErrorCode.BAD_CREDENTIALS);
+        }
+        return issue(user.getId());
+    }
+
+    public void logout() {
+        AdminPrincipal principal = AdminHolder.current();
+        if (principal == null) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        store.revoke(principal.accessJti(), principal.accessExpiresAt());
+        store.revokeRefresh(principal.userId());
+    }
+
+    private LoginTokens issue(long userId) {
+        JwtTokenService.ParsedAccess access = tokens.issue(userId);
+        String refreshToken = store.issueRefresh(userId);
+        return new LoginTokens(
+                access.token(), refreshToken, properties.getAccessTtl().toSeconds());
+    }
+
+    public record LoginTokens(String accessToken, String refreshToken, long expiresIn) {}
+}

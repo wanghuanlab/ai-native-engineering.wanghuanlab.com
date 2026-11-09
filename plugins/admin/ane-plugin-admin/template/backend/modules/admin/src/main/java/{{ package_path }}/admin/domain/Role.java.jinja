@@ -1,0 +1,63 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 角色。数据范围决定能看到哪些部门和用户。 */
+@Entity
+@Table(name = "adm_role")
+@SoftDelete(columnName = "deleted")
+public class Role extends BaseEntity {
+
+    @Column(nullable = false, length = 64)
+    private String code;
+
+    @Column(nullable = false, length = 64)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private DataScope dataScope;
+
+    @Column(nullable = false)
+    private boolean enabled;
+
+    protected Role() {}
+
+    public static Role create(String code, String name, DataScope dataScope, boolean enabled) {
+        Role role = new Role();
+        role.code = code;
+        role.name = name;
+        role.dataScope = dataScope;
+        role.enabled = enabled;
+        return role;
+    }
+
+    public void change(String code, String name, DataScope dataScope, boolean enabled) {
+        this.code = code;
+        this.name = name;
+        this.dataScope = dataScope;
+        this.enabled = enabled;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public DataScope getDataScope() {
+        return dataScope;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+}

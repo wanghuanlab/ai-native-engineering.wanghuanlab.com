@@ -460,6 +460,47 @@ PY
   cd "${here}"
 }
 
+admin_tests() {
+  echo "▶ 插件：认证与权限"
+  local here dest pg kb
+  here="$(pwd)"
+  dest="${WORK}/admin"
+  rm -rf "${dest}"
+  "${COPIER[@]}" copy --trust --defaults --quiet -d project_code=park -d project_name=智慧园区 \
+    -d tech_lead=selftest -d 'plugins=["admin"]' "${BASELINE_DIR}" "${dest}"
+  cd "${dest}"
+  [ -f .baseline/plugins/admin.yml ] || die "没有写下认证插件答案"
+  grep -q 'migration_version:' .baseline/plugins/admin.yml || die "认证插件答案没有迁移版本"
+  grep -q 'plugin:admin:module' backend/pom.xml || die "未插入认证插件模块"
+  grep -q 'plugin:admin:dependency' backend/app/pom.xml || die "app 未依赖认证插件"
+  grep -q 'plugin:admin:config' backend/app/src/main/resources/application.yml || die "未插入认证插件配置标记"
+  grep -q 'ane.admin.jwt-secret=' backend/app/src/main/resources/application.properties || die "未写入认证配置"
+  grep -q 'plugin:admin:services' deploy/local/compose.yaml || die "未插入 Redis 服务"
+  pg=$(basename "$(ls db/migration/postgresql/V*__admin_init.sql)")
+  case "${pg}" in
+    V000000000000__*) die "认证迁移脚本仍是占位版本" ;;
+    V[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]__admin_init.sql) ;;
+    *) die "认证迁移脚本文件名不符合安装时刻：${pg}" ;;
+  esac
+  python3 scripts/lib/checks.py migrations
+  ./scripts/verify.sh full
+  pass "创建时引入认证插件并通过 full"
+  cd "${here}"
+
+  dest="${WORK}/admin-kingbase"
+  rm -rf "${dest}"
+  "${COPIER[@]}" copy --trust --defaults --quiet -d project_code=park -d project_name=智慧园区 \
+    -d tech_lead=selftest -d enable_xinchuang=true -d xinchuang_db=kingbase -d 'plugins=["admin"]' \
+    "${BASELINE_DIR}" "${dest}"
+  cd "${dest}"
+  kb=$(basename "$(ls db/migration/kingbase/V*__admin_init.sql)")
+  pg=$(basename "$(ls db/migration/postgresql/V*__admin_init.sql)")
+  [ "${pg}" = "${kb}" ] || die "金仓认证迁移脚本文件名与 PostgreSQL 不一致"
+  python3 scripts/lib/checks.py migrations
+  pass "认证插件在金仓画像下方言一致"
+  cd "${here}"
+}
+
 plugin_dialect_tests() {
   echo "▶ 插件：信创画像的迁移脚本"
   ./scripts/plugin.sh add example
@@ -474,6 +515,20 @@ plugin_dialect_tests() {
   pass "示例插件在达梦画像下方言一致"
   git reset -q --hard
   git clean -qfd -e node_modules
+
+  echo "▶ 插件：认证与权限的达梦迁移"
+  ./scripts/plugin.sh add admin
+  local admin_pg admin_dm
+  admin_pg=$(basename "$(ls db/migration/postgresql/V*__admin_init.sql)")
+  admin_dm=$(basename "$(ls db/migration/dm/V*__admin_init.sql)")
+  [ "${admin_pg}" = "${admin_dm}" ] || die "达梦认证迁移脚本文件名与 PostgreSQL 不一致"
+  if ls db/migration/kingbase/V*__admin_init.sql >/dev/null 2>&1; then
+    die "达梦画像不应生成金仓认证脚本"
+  fi
+  python3 scripts/lib/checks.py migrations
+  pass "认证插件在达梦画像下方言一致"
+  git reset -q --hard
+  git clean -qfd -e node_modules
 }
 
 run_default() {
@@ -484,6 +539,7 @@ run_default() {
   scaffold_tests
   upgrade_tests
   plugin_tests
+  admin_tests
 }
 
 run_minimal() {

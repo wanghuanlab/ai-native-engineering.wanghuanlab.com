@@ -1,0 +1,252 @@
+package {{ package_name }}.admin.service;
+
+import {{ package_name }}.admin.domain.AdminErrorCode;
+import {{ package_name }}.admin.domain.DataScopes;
+import {{ package_name }}.admin.domain.Dept;
+import {{ package_name }}.admin.domain.DeptRepository;
+import {{ package_name }}.admin.domain.Menu;
+import {{ package_name }}.admin.domain.MenuRepository;
+import {{ package_name }}.admin.domain.Post;
+import {{ package_name }}.admin.domain.PostRepository;
+import {{ package_name }}.admin.domain.Role;
+import {{ package_name }}.admin.domain.RoleDept;
+import {{ package_name }}.admin.domain.RoleDeptRepository;
+import {{ package_name }}.admin.domain.RoleMenu;
+import {{ package_name }}.admin.domain.RoleMenuRepository;
+import {{ package_name }}.admin.domain.RoleRepository;
+import {{ package_name }}.admin.domain.UserRepository;
+import {{ package_name }}.admin.security.AdminHolder;
+import {{ package_name }}.admin.security.AdminPrincipal;
+import {{ package_name }}.admin.service.AdminCommands.DeptCommand;
+import {{ package_name }}.admin.service.AdminCommands.MenuCommand;
+import {{ package_name }}.admin.service.AdminCommands.PostCommand;
+import {{ package_name }}.admin.service.AdminCommands.RoleCommand;
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** 角色、菜单、部门和岗位。部门列表受数据范围约束。 */
+@Service
+public class OrgAdminService {
+
+    private final RoleRepository roles;
+    private final MenuRepository menus;
+    private final DeptRepository depts;
+    private final PostRepository posts;
+    private final RoleMenuRepository roleMenus;
+    private final RoleDeptRepository roleDepts;
+    private final UserRepository users;
+
+    public OrgAdminService(
+            RoleRepository roles,
+            MenuRepository menus,
+            DeptRepository depts,
+            PostRepository posts,
+            RoleMenuRepository roleMenus,
+            RoleDeptRepository roleDepts,
+            UserRepository users) {
+        this.roles = roles;
+        this.menus = menus;
+        this.depts = depts;
+        this.posts = posts;
+        this.roleMenus = roleMenus;
+        this.roleDepts = roleDepts;
+        this.users = users;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Role> roles() {
+        return roles.findAll();
+    }
+
+    @Transactional
+    public Role createRole(RoleCommand command) {
+        if (roles.existsByCode(command.code())) {
+            throw new BizException(AdminErrorCode.CODE_TAKEN);
+        }
+        Role role = roles.save(Role.create(command.code(), command.name(), command.dataScope(), command.enabled()));
+        replaceRoleLinks(role.getId(), command);
+        return role;
+    }
+
+    @Transactional
+    public Role updateRole(Long id, RoleCommand command) {
+        Role role = roles.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        roles.findByCode(command.code())
+                .filter(found -> !found.getId().equals(id))
+                .ifPresent(found -> {
+                    throw new BizException(AdminErrorCode.CODE_TAKEN);
+                });
+        role.change(command.code(), command.name(), command.dataScope(), command.enabled());
+        replaceRoleLinks(id, command);
+        return role;
+    }
+
+    @Transactional
+    public void deleteRole(Long id) {
+        Role role = roles.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        roleMenus.deleteByRoleId(id);
+        roleDepts.deleteByRoleId(id);
+        roles.delete(role);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> menuIdsOfRole(Long roleId) {
+        return roleMenus.findByRoleId(roleId).stream().map(RoleMenu::getMenuId).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> deptIdsOfRole(Long roleId) {
+        return roleDepts.findByRoleId(roleId).stream().map(RoleDept::getDeptId).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Menu> menus() {
+        return menus.findAll();
+    }
+
+    @Transactional
+    public Menu createMenu(MenuCommand command) {
+        requireParent(command.parentId());
+        return menus.save(Menu.create(
+                command.parentId(),
+                command.name(),
+                command.path(),
+                command.component(),
+                command.permission(),
+                command.menuType(),
+                command.sortOrder(),
+                command.visible()));
+    }
+
+    @Transactional
+    public Menu updateMenu(Long id, MenuCommand command) {
+        Menu menu = menus.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        requireParent(command.parentId());
+        menu.change(
+                command.parentId(),
+                command.name(),
+                command.path(),
+                command.component(),
+                command.permission(),
+                command.menuType(),
+                command.sortOrder(),
+                command.visible());
+        return menu;
+    }
+
+    @Transactional
+    public void deleteMenu(Long id) {
+        Menu menu = menus.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        if (menus.existsByParentId(id)) {
+            throw new BizException(AdminErrorCode.MENU_IN_USE);
+        }
+        menus.delete(menu);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Dept> depts() {
+        return depts.findAll(DataScopes.depts(current().visible()));
+    }
+
+    @Transactional
+    public Dept createDept(DeptCommand command) {
+        return depts.save(
+                Dept.create(command.parentId(), command.name(), command.sortOrder(), ancestors(command.parentId())));
+    }
+
+    @Transactional
+    public Dept updateDept(Long id, DeptCommand command) {
+        Dept dept = depts.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        dept.rename(command.parentId(), command.name(), command.sortOrder(), ancestors(command.parentId()));
+        return dept;
+    }
+
+    @Transactional
+    public void deleteDept(Long id) {
+        Dept dept = depts.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        if (users.existsByDeptId(id)) {
+            throw new BizException(AdminErrorCode.DEPT_IN_USE);
+        }
+        depts.delete(dept);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Post> posts() {
+        return posts.findAll();
+    }
+
+    @Transactional
+    public Post createPost(PostCommand command) {
+        if (posts.existsByCode(command.code())) {
+            throw new BizException(AdminErrorCode.CODE_TAKEN);
+        }
+        return posts.save(Post.create(command.code(), command.name(), command.sortOrder(), command.enabled()));
+    }
+
+    @Transactional
+    public Post updatePost(Long id, PostCommand command) {
+        Post post = posts.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        posts.findByCode(command.code())
+                .filter(found -> !found.getId().equals(id))
+                .ifPresent(found -> {
+                    throw new BizException(AdminErrorCode.CODE_TAKEN);
+                });
+        post.change(command.code(), command.name(), command.sortOrder(), command.enabled());
+        return post;
+    }
+
+    @Transactional
+    public void deletePost(Long id) {
+        Post post = posts.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        posts.delete(post);
+    }
+
+    private void replaceRoleLinks(Long roleId, RoleCommand command) {
+        for (Long menuId : command.menuIds()) {
+            if (!menus.existsById(menuId)) {
+                throw new BizException(CommonErrorCode.NOT_FOUND);
+            }
+        }
+        for (Long deptId : command.deptIds()) {
+            if (!depts.existsById(deptId)) {
+                throw new BizException(CommonErrorCode.NOT_FOUND);
+            }
+        }
+        roleMenus.deleteByRoleId(roleId);
+        for (Long menuId : command.menuIds()) {
+            roleMenus.save(RoleMenu.link(roleId, menuId));
+        }
+        roleDepts.deleteByRoleId(roleId);
+        for (Long deptId : command.deptIds()) {
+            roleDepts.save(RoleDept.link(roleId, deptId));
+        }
+    }
+
+    private void requireParent(Long parentId) {
+        if (parentId != null && !menus.existsById(parentId)) {
+            throw new BizException(CommonErrorCode.NOT_FOUND);
+        }
+    }
+
+    private String ancestors(Long parentId) {
+        if (parentId == null) {
+            return "";
+        }
+        Dept parent = depts.findById(parentId).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+        if (parent.getAncestors() == null || parent.getAncestors().isEmpty()) {
+            return String.valueOf(parent.getId());
+        }
+        return parent.getAncestors() + "," + parent.getId();
+    }
+
+    private static AdminPrincipal current() {
+        AdminPrincipal principal = AdminHolder.current();
+        if (principal == null) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        return principal;
+    }
+}

@@ -1,0 +1,36 @@
+package {{ package_name }}.admin.security;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import io.jsonwebtoken.JwtException;
+import java.time.Duration;
+import org.junit.jupiter.api.Test;
+
+class JwtTokenServiceTest {
+
+    @Test
+    void roundTripKeepsTheUserAndRejectsTampering() {
+        JwtTokenService tokens = new JwtTokenService(properties("dev-only-change-me-please-32bytes!!"));
+        JwtTokenService.ParsedAccess issued = tokens.issue(42L);
+        JwtTokenService.ParsedAccess parsed = tokens.parse(issued.token());
+        assertThat(parsed.userId()).isEqualTo(42L);
+        assertThat(parsed.jti()).isEqualTo(issued.jti());
+        assertThat(parsed.expiresAt().getEpochSecond())
+                .isEqualTo(issued.expiresAt().getEpochSecond());
+        assertThatThrownBy(() -> tokens.parse(issued.token() + "x")).isInstanceOf(JwtException.class);
+    }
+
+    @Test
+    void rejectsAShortSecret() {
+        assertThatThrownBy(() -> new JwtTokenService(properties("too-short")))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    private static AdminProperties properties(String secret) {
+        AdminProperties properties = new AdminProperties();
+        properties.setJwtSecret(secret);
+        properties.setAccessTtl(Duration.ofMinutes(5));
+        return properties;
+    }
+}

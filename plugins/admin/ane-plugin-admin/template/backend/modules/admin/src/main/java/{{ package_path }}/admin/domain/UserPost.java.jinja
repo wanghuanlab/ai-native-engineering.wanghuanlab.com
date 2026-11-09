@@ -1,0 +1,37 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 用户和岗位的关联。 */
+@Entity
+@Table(name = "adm_user_post")
+@SoftDelete(columnName = "deleted")
+public class UserPost extends BaseEntity {
+
+    @Column(nullable = false)
+    private Long userId;
+
+    @Column(nullable = false)
+    private Long postId;
+
+    protected UserPost() {}
+
+    public static UserPost link(Long userId, Long postId) {
+        UserPost link = new UserPost();
+        link.userId = userId;
+        link.postId = postId;
+        return link;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getPostId() {
+        return postId;
+    }
+}

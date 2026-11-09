@@ -1,0 +1,36 @@
+package {{ package_name }}.admin.domain;
+
+import org.springframework.data.jpa.domain.Specification;
+
+/** 按 {@link VisibleData} 限制用户和部门查询。 */
+public final class DataScopes {
+
+    private DataScopes() {}
+
+    public static Specification<User> users(VisibleData visible, Long currentUserId) {
+        return (root, query, cb) -> {
+            if (visible.unrestricted()) {
+                return cb.conjunction();
+            }
+            if (visible.selfOnly()) {
+                return cb.equal(root.get("id"), currentUserId);
+            }
+            if (visible.deptIds().isEmpty()) {
+                return cb.disjunction();
+            }
+            return root.get("deptId").in(visible.deptIds());
+        };
+    }
+
+    public static Specification<Dept> depts(VisibleData visible) {
+        return (root, query, cb) -> {
+            if (visible.unrestricted()) {
+                return cb.conjunction();
+            }
+            if (visible.deptIds().isEmpty()) {
+                return cb.disjunction();
+            }
+            return root.get("id").in(visible.deptIds());
+        };
+    }
+}

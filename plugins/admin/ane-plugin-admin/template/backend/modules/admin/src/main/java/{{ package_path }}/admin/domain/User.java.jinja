@@ -1,0 +1,72 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 登录用户。只保存密码哈希。 */
+@Entity
+@Table(name = "adm_user")
+@SoftDelete(columnName = "deleted")
+public class User extends BaseEntity {
+
+    @Column(nullable = false)
+    private Long deptId;
+
+    @Column(nullable = false, length = 64)
+    private String username;
+
+    @Column(nullable = false, length = 100)
+    private String passwordHash;
+
+    @Column(nullable = false, length = 64)
+    private String nickname;
+
+    @Column(nullable = false)
+    private boolean enabled;
+
+    protected User() {}
+
+    public static User create(String username, String nickname, Long deptId, String passwordHash) {
+        User user = new User();
+        user.username = username;
+        user.nickname = nickname;
+        user.deptId = deptId;
+        user.passwordHash = passwordHash;
+        user.enabled = true;
+        return user;
+    }
+
+    public void change(String username, String nickname, Long deptId, boolean enabled) {
+        this.username = username;
+        this.nickname = nickname;
+        this.deptId = deptId;
+        this.enabled = enabled;
+    }
+
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public Long getDeptId() {
+        return deptId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+}

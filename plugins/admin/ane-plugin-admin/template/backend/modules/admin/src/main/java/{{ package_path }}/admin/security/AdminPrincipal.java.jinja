@@ -1,0 +1,24 @@
+package {{ package_name }}.admin.security;
+
+import {{ package_name }}.admin.domain.VisibleData;
+import java.time.Instant;
+import java.util.Set;
+
+/** 当前请求已经确认过的登录用户。 */
+public record AdminPrincipal(
+        long userId,
+        String username,
+        long deptId,
+        Set<String> permissions,
+        VisibleData visible,
+        String accessJti,
+        Instant accessExpiresAt) {
+
+    public AdminPrincipal {
+        permissions = permissions == null ? Set.of() : Set.copyOf(permissions);
+    }
+
+    public AdminPrincipal withAccess(String jti, Instant expiresAt) {
+        return new AdminPrincipal(userId, username, deptId, permissions, visible, jti, expiresAt);
+    }
+}

@@ -1,0 +1,171 @@
+package {{ package_name }}.admin.web;
+
+import {{ package_name }}.admin.domain.DataScope;
+import {{ package_name }}.admin.domain.Dept;
+import {{ package_name }}.admin.domain.Menu;
+import {{ package_name }}.admin.domain.MenuType;
+import {{ package_name }}.admin.domain.Post;
+import {{ package_name }}.admin.domain.Role;
+import {{ package_name }}.admin.domain.User;
+import {{ package_name }}.admin.service.AdminCommands.DeptCommand;
+import {{ package_name }}.admin.service.AdminCommands.MenuCommand;
+import {{ package_name }}.admin.service.AdminCommands.PostCommand;
+import {{ package_name }}.admin.service.AdminCommands.RoleCommand;
+import {{ package_name }}.admin.service.AdminCommands.UserCommand;
+import {{ package_name }}.admin.web.dto.DataScopeDto;
+import {{ package_name }}.admin.web.dto.DeptDto;
+import {{ package_name }}.admin.web.dto.DeptWriteDto;
+import {{ package_name }}.admin.web.dto.MenuNodeDto;
+import {{ package_name }}.admin.web.dto.MenuTypeDto;
+import {{ package_name }}.admin.web.dto.MenuWriteDto;
+import {{ package_name }}.admin.web.dto.PostDto;
+import {{ package_name }}.admin.web.dto.PostWriteDto;
+import {{ package_name }}.admin.web.dto.RoleDto;
+import {{ package_name }}.admin.web.dto.RoleWriteDto;
+import {{ package_name }}.admin.web.dto.UserDto;
+import {{ package_name }}.admin.web.dto.UserWriteDto;
+import {{ package_name }}.common.web.Ids;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/** 契约 DTO 和领域对象之间的转换。 */
+public final class AdminViews {
+
+    private AdminViews() {}
+
+    public static UserDto user(User user, List<Long> roleIds, List<Long> postIds) {
+        return new UserDto()
+                .id(Ids.format(user.getId()))
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .deptId(Ids.format(user.getDeptId()))
+                .enabled(user.isEnabled())
+                .roleIds(strings(roleIds))
+                .postIds(strings(postIds));
+    }
+
+    public static UserCommand userCommand(UserWriteDto body) {
+        return new UserCommand(
+                body.getUsername(),
+                body.getNickname(),
+                body.getPassword(),
+                Ids.parse(body.getDeptId()),
+                Boolean.TRUE.equals(body.getEnabled()),
+                longs(body.getRoleIds()),
+                longs(body.getPostIds()));
+    }
+
+    public static RoleDto role(Role role, List<Long> menuIds, List<Long> deptIds) {
+        return new RoleDto()
+                .id(Ids.format(role.getId()))
+                .code(role.getCode())
+                .name(role.getName())
+                .dataScope(DataScopeDto.valueOf(role.getDataScope().name()))
+                .enabled(role.isEnabled())
+                .menuIds(strings(menuIds))
+                .deptIds(strings(deptIds));
+    }
+
+    public static RoleCommand roleCommand(RoleWriteDto body) {
+        return new RoleCommand(
+                body.getCode(),
+                body.getName(),
+                DataScope.valueOf(body.getDataScope().name()),
+                Boolean.TRUE.equals(body.getEnabled()),
+                longs(body.getMenuIds()),
+                longs(body.getDeptIds()));
+    }
+
+    public static DeptDto dept(Dept dept) {
+        return new DeptDto()
+                .id(Ids.format(dept.getId()))
+                .parentId(dept.getParentId() == null ? null : Ids.format(dept.getParentId()))
+                .name(dept.getName())
+                .sortOrder(dept.getSortOrder());
+    }
+
+    public static DeptCommand deptCommand(DeptWriteDto body) {
+        Long parentId = body.getParentId() == null ? null : Ids.parse(body.getParentId());
+        return new DeptCommand(parentId, body.getName(), body.getSortOrder());
+    }
+
+    public static PostDto post(Post post) {
+        return new PostDto()
+                .id(Ids.format(post.getId()))
+                .code(post.getCode())
+                .name(post.getName())
+                .sortOrder(post.getSortOrder())
+                .enabled(post.isEnabled());
+    }
+
+    public static PostCommand postCommand(PostWriteDto body) {
+        return new PostCommand(
+                body.getCode(), body.getName(), body.getSortOrder(), Boolean.TRUE.equals(body.getEnabled()));
+    }
+
+    public static MenuCommand menuCommand(MenuWriteDto body) {
+        Long parentId = body.getParentId() == null ? null : Ids.parse(body.getParentId());
+        return new MenuCommand(
+                parentId,
+                body.getName(),
+                body.getPath(),
+                body.getComponent(),
+                body.getPermission(),
+                MenuType.valueOf(body.getMenuType().name()),
+                body.getSortOrder(),
+                Boolean.TRUE.equals(body.getVisible()));
+    }
+
+    public static List<MenuNodeDto> tree(List<Menu> menus) {
+        List<Menu> ordered = menus.stream()
+                .sorted(Comparator.comparing(Menu::getSortOrder, Comparator.nullsLast(Integer::compareTo)))
+                .toList();
+        Map<Long, MenuNodeDto> nodes = new HashMap<>();
+        for (Menu menu : ordered) {
+            nodes.put(menu.getId(), node(menu));
+        }
+        List<MenuNodeDto> roots = new ArrayList<>();
+        for (Menu menu : ordered) {
+            MenuNodeDto current = nodes.get(menu.getId());
+            if (menu.getParentId() == null || !nodes.containsKey(menu.getParentId())) {
+                roots.add(current);
+                continue;
+            }
+            MenuNodeDto parent = nodes.get(menu.getParentId());
+            if (parent.getChildren() == null) {
+                parent.setChildren(new ArrayList<>());
+            }
+            parent.getChildren().add(current);
+        }
+        return roots;
+    }
+
+    public static MenuNodeDto node(Menu menu) {
+        return new MenuNodeDto()
+                .id(Ids.format(menu.getId()))
+                .parentId(menu.getParentId() == null ? null : Ids.format(menu.getParentId()))
+                .name(menu.getName())
+                .path(menu.getPath())
+                .component(menu.getComponent())
+                .permission(menu.getPermission())
+                .menuType(MenuTypeDto.valueOf(menu.getMenuType().name()))
+                .sortOrder(menu.getSortOrder())
+                .visible(menu.isVisible())
+                .children(new ArrayList<>());
+    }
+
+    private static List<String> strings(List<Long> ids) {
+        return ids.stream().map(Ids::format).toList();
+    }
+
+    private static Set<Long> longs(List<String> ids) {
+        if (ids == null) {
+            return Set.of();
+        }
+        return Set.copyOf(ids.stream().map(Ids::parse).toList());
+    }
+}

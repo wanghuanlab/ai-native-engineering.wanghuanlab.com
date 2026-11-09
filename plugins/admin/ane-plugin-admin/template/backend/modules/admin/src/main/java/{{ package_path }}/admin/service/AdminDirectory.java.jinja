@@ -1,0 +1,130 @@
+package {{ package_name }}.admin.service;
+
+import {{ package_name }}.admin.domain.DataScope;
+import {{ package_name }}.admin.domain.DataScopePolicy;
+import {{ package_name }}.admin.domain.Dept;
+import {{ package_name }}.admin.domain.DeptRepository;
+import {{ package_name }}.admin.domain.Menu;
+import {{ package_name }}.admin.domain.MenuRepository;
+import {{ package_name }}.admin.domain.Role;
+import {{ package_name }}.admin.domain.RoleDept;
+import {{ package_name }}.admin.domain.RoleDeptRepository;
+import {{ package_name }}.admin.domain.RoleMenu;
+import {{ package_name }}.admin.domain.RoleMenuRepository;
+import {{ package_name }}.admin.domain.RoleRepository;
+import {{ package_name }}.admin.domain.User;
+import {{ package_name }}.admin.domain.UserRepository;
+import {{ package_name }}.admin.domain.UserRole;
+import {{ package_name }}.admin.domain.UserRoleRepository;
+import {{ package_name }}.admin.domain.VisibleData;
+import {{ package_name }}.admin.security.AdminPrincipal;
+import {{ package_name }}.admin.security.AdminProperties;
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** 把用户、角色和菜单收成当前请求用的登录信息。 */
+@Service
+public class AdminDirectory {
+
+    private final UserRepository users;
+    private final RoleRepository roles;
+    private final MenuRepository menus;
+    private final DeptRepository depts;
+    private final UserRoleRepository userRoles;
+    private final RoleMenuRepository roleMenus;
+    private final RoleDeptRepository roleDepts;
+    private final AdminProperties properties;
+
+    public AdminDirectory(
+            UserRepository users,
+            RoleRepository roles,
+            MenuRepository menus,
+            DeptRepository depts,
+            UserRoleRepository userRoles,
+            RoleMenuRepository roleMenus,
+            RoleDeptRepository roleDepts,
+            AdminProperties properties) {
+        this.users = users;
+        this.roles = roles;
+        this.menus = menus;
+        this.depts = depts;
+        this.userRoles = userRoles;
+        this.roleMenus = roleMenus;
+        this.roleDepts = roleDepts;
+        this.properties = properties;
+    }
+
+    @Transactional(readOnly = true)
+    public AdminPrincipal load(long userId) {
+        User user = users.findById(userId).orElseThrow(() -> new BizException(CommonErrorCode.UNAUTHORIZED));
+        if (!user.isEnabled()) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        List<Long> roleIds = roleIdsOf(userId);
+        List<Role> granted = enabledRoles(roleIds);
+        DataScope scope =
+                DataScopePolicy.widest(granted.stream().map(Role::getDataScope).toList());
+        Set<Long> custom = customDepts(scope, roleIds);
+        List<Dept> all = scope == DataScope.DEPT_AND_CHILD ? depts.findAll() : List.of();
+        VisibleData visible =
+                DataScopePolicy.visible(properties.isDataScopeEnabled(), scope, user.getDeptId(), custom, all);
+        return new AdminPrincipal(
+                user.getId(), user.getUsername(), user.getDeptId(), permissionsOf(roleIds), visible, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Menu> menusOf(long userId) {
+        List<Long> menuIds = menuIdsOf(roleIdsOf(userId));
+        if (menuIds.isEmpty()) {
+            return List.of();
+        }
+        return menus.findAllById(menuIds);
+    }
+
+    private List<Long> roleIdsOf(long userId) {
+        return userRoles.findByUserId(userId).stream().map(UserRole::getRoleId).toList();
+    }
+
+    private List<Role> enabledRoles(List<Long> roleIds) {
+        if (roleIds.isEmpty()) {
+            return List.of();
+        }
+        return roles.findAllById(roleIds).stream().filter(Role::isEnabled).toList();
+    }
+
+    private Set<Long> customDepts(DataScope scope, List<Long> roleIds) {
+        if (scope != DataScope.CUSTOM || roleIds.isEmpty()) {
+            return Set.of();
+        }
+        Set<Long> ids = new HashSet<>();
+        for (RoleDept link : roleDepts.findByRoleIdIn(roleIds)) {
+            ids.add(link.getDeptId());
+        }
+        return ids;
+    }
+
+    private Set<String> permissionsOf(List<Long> roleIds) {
+        Set<String> permissions = new HashSet<>();
+        for (Menu menu : menus.findAllById(menuIdsOf(roleIds))) {
+            if (menu.getPermission() != null && !menu.getPermission().isBlank()) {
+                permissions.add(menu.getPermission());
+            }
+        }
+        return permissions;
+    }
+
+    private List<Long> menuIdsOf(List<Long> roleIds) {
+        if (roleIds.isEmpty()) {
+            return List.of();
+        }
+        return roleMenus.findByRoleIdIn(roleIds).stream()
+                .map(RoleMenu::getMenuId)
+                .distinct()
+                .toList();
+    }
+}

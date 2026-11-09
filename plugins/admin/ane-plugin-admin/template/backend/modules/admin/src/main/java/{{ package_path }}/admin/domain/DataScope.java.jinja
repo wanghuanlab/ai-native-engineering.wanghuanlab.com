@@ -1,0 +1,20 @@
+package {{ package_name }}.admin.domain;
+
+/** 角色能看到的数据范围。数值越大，范围越宽。 */
+public enum DataScope {
+    SELF(1),
+    DEPT(2),
+    CUSTOM(3),
+    DEPT_AND_CHILD(4),
+    ALL(5);
+
+    private final int rank;
+
+    DataScope(int rank) {
+        this.rank = rank;
+    }
+
+    public int rank() {
+        return rank;
+    }
+}

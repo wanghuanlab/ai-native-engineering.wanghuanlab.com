@@ -1,0 +1,51 @@
+package {{ package_name }}.admin.security;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
+import java.util.UUID;
+import javax.crypto.SecretKey;
+
+/** 签发和校验访问令牌。密钥至少 32 字节。 */
+public final class JwtTokenService {
+
+    private final SecretKey key;
+    private final AdminProperties properties;
+
+    public JwtTokenService(AdminProperties properties) {
+        String secret = properties.getJwtSecret();
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("ane.admin.jwt-secret 至少需要 32 字节");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.properties = properties;
+    }
+
+    public ParsedAccess issue(long userId) {
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(properties.getAccessTtl());
+        String jti = UUID.randomUUID().toString();
+        String token = Jwts.builder()
+                .id(jti)
+                .subject(Long.toString(userId))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiresAt))
+                .signWith(key)
+                .compact();
+        return new ParsedAccess(token, userId, jti, expiresAt);
+    }
+
+    public ParsedAccess parse(String token) {
+        var claims =
+                Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        return new ParsedAccess(
+                token,
+                Long.parseLong(claims.getSubject()),
+                claims.getId(),
+                claims.getExpiration().toInstant());
+    }
+
+    public record ParsedAccess(String token, long userId, String jti, Instant expiresAt) {}
+}

@@ -1,0 +1,37 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 用户和角色的关联。 */
+@Entity
+@Table(name = "adm_user_role")
+@SoftDelete(columnName = "deleted")
+public class UserRole extends BaseEntity {
+
+    @Column(nullable = false)
+    private Long userId;
+
+    @Column(nullable = false)
+    private Long roleId;
+
+    protected UserRole() {}
+
+    public static UserRole link(Long userId, Long roleId) {
+        UserRole link = new UserRole();
+        link.userId = userId;
+        link.roleId = roleId;
+        return link;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getRoleId() {
+        return roleId;
+    }
+}

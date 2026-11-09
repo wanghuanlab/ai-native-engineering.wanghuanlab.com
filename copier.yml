@@ -120,6 +120,7 @@ plugins:
   help: 创建时装入的插件。项目建好后也可以用 scripts/plugin.sh add 再装。示例插件只用于验证机制，业务项目不要选
   choices:
     示例插件（仅验证插件机制）: example
+    认证与权限（用户、角色、菜单、部门、岗位）: admin
   default: []
 
 # ---- 计算变量（不提问） ----

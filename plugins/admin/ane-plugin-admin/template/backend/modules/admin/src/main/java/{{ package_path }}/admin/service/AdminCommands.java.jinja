@@ -1,0 +1,47 @@
+package {{ package_name }}.admin.service;
+
+import {{ package_name }}.admin.domain.DataScope;
+import {{ package_name }}.admin.domain.MenuType;
+import java.util.Set;
+
+/** 服务层入参。Web 层负责把契约 DTO 转成这些记录。 */
+public final class AdminCommands {
+
+    private AdminCommands() {}
+
+    public record UserCommand(
+            String username,
+            String nickname,
+            String password,
+            Long deptId,
+            boolean enabled,
+            Set<Long> roleIds,
+            Set<Long> postIds) {
+        public UserCommand {
+            roleIds = roleIds == null ? Set.of() : Set.copyOf(roleIds);
+            postIds = postIds == null ? Set.of() : Set.copyOf(postIds);
+        }
+    }
+
+    public record RoleCommand(
+            String code, String name, DataScope dataScope, boolean enabled, Set<Long> menuIds, Set<Long> deptIds) {
+        public RoleCommand {
+            menuIds = menuIds == null ? Set.of() : Set.copyOf(menuIds);
+            deptIds = deptIds == null ? Set.of() : Set.copyOf(deptIds);
+        }
+    }
+
+    public record MenuCommand(
+            Long parentId,
+            String name,
+            String path,
+            String component,
+            String permission,
+            MenuType menuType,
+            Integer sortOrder,
+            boolean visible) {}
+
+    public record DeptCommand(Long parentId, String name, Integer sortOrder) {}
+
+    public record PostCommand(String code, String name, Integer sortOrder, boolean enabled) {}
+}

@@ -1,0 +1,55 @@
+package {{ package_name }}.admin.security;
+
+import java.time.Duration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/** 认证插件的配置，前缀 {@code ane.admin}。 */
+@ConfigurationProperties(prefix = "ane.admin")
+public class AdminProperties {
+
+    private String jwtSecret;
+    private Duration accessTtl = Duration.ofHours(2);
+    private Duration refreshTtl = Duration.ofDays(7);
+    private Duration captchaTtl = Duration.ofMinutes(2);
+    private boolean dataScopeEnabled = true;
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    public void setJwtSecret(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+    }
+
+    public Duration getAccessTtl() {
+        return accessTtl;
+    }
+
+    public void setAccessTtl(Duration accessTtl) {
+        this.accessTtl = accessTtl;
+    }
+
+    public Duration getRefreshTtl() {
+        return refreshTtl;
+    }
+
+    public void setRefreshTtl(Duration refreshTtl) {
+        this.refreshTtl = refreshTtl;
+    }
+
+    public Duration getCaptchaTtl() {
+        return captchaTtl;
+    }
+
+    public void setCaptchaTtl(Duration captchaTtl) {
+        this.captchaTtl = captchaTtl;
+    }
+
+    public boolean isDataScopeEnabled() {
+        return dataScopeEnabled;
+    }
+
+    public void setDataScopeEnabled(boolean dataScopeEnabled) {
+        this.dataScopeEnabled = dataScopeEnabled;
+    }
+}

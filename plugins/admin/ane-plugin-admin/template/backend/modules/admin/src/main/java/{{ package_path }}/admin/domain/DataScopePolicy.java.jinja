@@ -1,0 +1,67 @@
+package {{ package_name }}.admin.domain;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/** 把角色上的数据范围收成一次查询能用的可见部门。多个角色取更宽的那个。 */
+public final class DataScopePolicy {
+
+    private DataScopePolicy() {}
+
+    public static DataScope widest(Collection<DataScope> scopes) {
+        DataScope best = DataScope.SELF;
+        for (DataScope scope : scopes) {
+            if (scope.rank() > best.rank()) {
+                best = scope;
+            }
+        }
+        return best;
+    }
+
+    public static VisibleData visible(
+            boolean enabled, DataScope scope, Long deptId, Set<Long> customDeptIds, List<Dept> depts) {
+        if (!enabled || scope == DataScope.ALL) {
+            return VisibleData.all();
+        }
+        Long own = deptId == null ? null : deptId;
+        if (scope == DataScope.SELF) {
+            return VisibleData.self(own == null ? Set.of() : Set.of(own));
+        }
+        if (scope == DataScope.DEPT) {
+            return VisibleData.depts(own == null ? Set.of() : Set.of(own));
+        }
+        if (scope == DataScope.CUSTOM) {
+            return VisibleData.depts(customDeptIds == null ? Set.of() : customDeptIds);
+        }
+        return VisibleData.depts(withChildren(own, depts));
+    }
+
+    public static Set<Long> withChildren(Long rootId, List<Dept> depts) {
+        Set<Long> ids = new HashSet<>();
+        if (rootId == null) {
+            return Set.of();
+        }
+        ids.add(rootId);
+        String root = String.valueOf(rootId);
+        for (Dept dept : depts) {
+            if (containsAncestor(dept.getAncestors(), root) && dept.getId() != null) {
+                ids.add(dept.getId());
+            }
+        }
+        return Set.copyOf(ids);
+    }
+
+    private static boolean containsAncestor(String ancestors, String root) {
+        if (ancestors == null || ancestors.isEmpty()) {
+            return false;
+        }
+        for (String part : ancestors.split(",")) {
+            if (part.equals(root)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

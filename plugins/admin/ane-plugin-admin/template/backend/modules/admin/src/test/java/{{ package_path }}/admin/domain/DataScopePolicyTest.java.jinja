@@ -1,0 +1,66 @@
+package {{ package_name }}.admin.domain;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+
+class DataScopePolicyTest {
+
+    @Test
+    void widerScopeWins() {
+        assertThat(DataScopePolicy.widest(List.of())).isEqualTo(DataScope.SELF);
+        assertThat(DataScopePolicy.widest(List.of(DataScope.DEPT, DataScope.ALL, DataScope.SELF)))
+                .isEqualTo(DataScope.ALL);
+        assertThat(DataScopePolicy.widest(List.of(DataScope.CUSTOM, DataScope.DEPT_AND_CHILD)))
+                .isEqualTo(DataScope.DEPT_AND_CHILD);
+    }
+
+    @Test
+    void disabledOrAllIsUnrestricted() {
+        VisibleData disabled = DataScopePolicy.visible(false, DataScope.SELF, 1L, Set.of(), List.of());
+        VisibleData all = DataScopePolicy.visible(true, DataScope.ALL, 1L, Set.of(), List.of());
+        assertThat(disabled.unrestricted()).isTrue();
+        assertThat(all.unrestricted()).isTrue();
+    }
+
+    @Test
+    void selfAndDeptStayOnTheUsersDepartment() {
+        VisibleData self = DataScopePolicy.visible(true, DataScope.SELF, 7L, Set.of(9L), List.of());
+        VisibleData dept = DataScopePolicy.visible(true, DataScope.DEPT, 7L, Set.of(9L), List.of());
+        assertThat(self.selfOnly()).isTrue();
+        assertThat(self.deptIds()).containsExactly(7L);
+        assertThat(dept.selfOnly()).isFalse();
+        assertThat(dept.deptIds()).containsExactly(7L);
+    }
+
+    @Test
+    void customUsesTheRoleDepartments() {
+        VisibleData custom = DataScopePolicy.visible(true, DataScope.CUSTOM, 7L, Set.of(3L, 4L), List.of());
+        assertThat(custom.deptIds()).containsExactlyInAnyOrder(3L, 4L);
+    }
+
+    @Test
+    void departmentAndChildrenMatchAncestorsExactly() {
+        Dept child = dept(11L, "1");
+        Dept other = dept(21L, "2");
+        Dept grandchild = dept(12L, "1,11");
+        Set<Long> visible = DataScopePolicy.withChildren(1L, List.of(child, other, grandchild));
+        assertThat(visible).containsExactlyInAnyOrder(1L, 11L, 12L);
+    }
+
+    private static Dept dept(long id, String ancestors) {
+        Dept dept = Dept.create(null, "部门", 1, ancestors);
+        try {
+            Field field = BaseEntity.class.getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(dept, id);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
+        return dept;
+    }
+}

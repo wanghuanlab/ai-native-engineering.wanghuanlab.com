@@ -1,0 +1,37 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 角色和菜单的关联。 */
+@Entity
+@Table(name = "adm_role_menu")
+@SoftDelete(columnName = "deleted")
+public class RoleMenu extends BaseEntity {
+
+    @Column(nullable = false)
+    private Long roleId;
+
+    @Column(nullable = false)
+    private Long menuId;
+
+    protected RoleMenu() {}
+
+    public static RoleMenu link(Long roleId, Long menuId) {
+        RoleMenu link = new RoleMenu();
+        link.roleId = roleId;
+        link.menuId = menuId;
+        return link;
+    }
+
+    public Long getRoleId() {
+        return roleId;
+    }
+
+    public Long getMenuId() {
+        return menuId;
+    }
+}

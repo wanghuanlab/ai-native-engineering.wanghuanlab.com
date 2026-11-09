@@ -1,0 +1,142 @@
+package {{ package_name }}.admin.web;
+
+import {{ package_name }}.admin.service.OrgAdminService;
+import {{ package_name }}.admin.web.api.AdminDeptsApi;
+import {{ package_name }}.admin.web.api.AdminMenusApi;
+import {{ package_name }}.admin.web.api.AdminPostsApi;
+import {{ package_name }}.admin.web.api.AdminRolesApi;
+import {{ package_name }}.admin.web.dto.DeptDto;
+import {{ package_name }}.admin.web.dto.DeptWriteDto;
+import {{ package_name }}.admin.web.dto.MenuNodeDto;
+import {{ package_name }}.admin.web.dto.MenuWriteDto;
+import {{ package_name }}.admin.web.dto.PostDto;
+import {{ package_name }}.admin.web.dto.PostWriteDto;
+import {{ package_name }}.admin.web.dto.RoleDto;
+import {{ package_name }}.admin.web.dto.RoleWriteDto;
+import {{ package_name }}.common.security.RequiresPermission;
+import {{ package_name }}.common.web.Ids;
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+/** 角色、菜单、部门和岗位接口。 */
+@RestController
+public class AdminOrgController implements AdminRolesApi, AdminMenusApi, AdminDeptsApi, AdminPostsApi {
+
+    private final OrgAdminService org;
+
+    public AdminOrgController(OrgAdminService org) {
+        this.org = org;
+    }
+
+    @Override
+    @RequiresPermission("system:role:list")
+    public ResponseEntity<List<RoleDto>> listRoles() {
+        List<RoleDto> body = org.roles().stream()
+                .map(role -> AdminViews.role(role, org.menuIdsOfRole(role.getId()), org.deptIdsOfRole(role.getId())))
+                .toList();
+        return ResponseEntity.ok(body);
+    }
+
+    @Override
+    @RequiresPermission("system:role:update")
+    public ResponseEntity<RoleDto> createRole(RoleWriteDto roleWrite) {
+        var role = org.createRole(AdminViews.roleCommand(roleWrite));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(AdminViews.role(role, org.menuIdsOfRole(role.getId()), org.deptIdsOfRole(role.getId())));
+    }
+
+    @Override
+    @RequiresPermission("system:role:update")
+    public ResponseEntity<RoleDto> updateRole(String id, RoleWriteDto roleWrite) {
+        var role = org.updateRole(Ids.parse(id), AdminViews.roleCommand(roleWrite));
+        return ResponseEntity.ok(
+                AdminViews.role(role, org.menuIdsOfRole(role.getId()), org.deptIdsOfRole(role.getId())));
+    }
+
+    @Override
+    @RequiresPermission("system:role:update")
+    public ResponseEntity<Void> deleteRole(String id) {
+        org.deleteRole(Ids.parse(id));
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @RequiresPermission("system:menu:list")
+    public ResponseEntity<List<MenuNodeDto>> listMenus() {
+        return ResponseEntity.ok(AdminViews.tree(org.menus()));
+    }
+
+    @Override
+    @RequiresPermission("system:menu:update")
+    public ResponseEntity<MenuNodeDto> createMenu(MenuWriteDto menuWrite) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(AdminViews.node(org.createMenu(AdminViews.menuCommand(menuWrite))));
+    }
+
+    @Override
+    @RequiresPermission("system:menu:update")
+    public ResponseEntity<MenuNodeDto> updateMenu(String id, MenuWriteDto menuWrite) {
+        return ResponseEntity.ok(AdminViews.node(org.updateMenu(Ids.parse(id), AdminViews.menuCommand(menuWrite))));
+    }
+
+    @Override
+    @RequiresPermission("system:menu:update")
+    public ResponseEntity<Void> deleteMenu(String id) {
+        org.deleteMenu(Ids.parse(id));
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @RequiresPermission("system:dept:list")
+    public ResponseEntity<List<DeptDto>> listDepts() {
+        return ResponseEntity.ok(org.depts().stream().map(AdminViews::dept).toList());
+    }
+
+    @Override
+    @RequiresPermission("system:dept:update")
+    public ResponseEntity<DeptDto> createDept(DeptWriteDto deptWrite) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(AdminViews.dept(org.createDept(AdminViews.deptCommand(deptWrite))));
+    }
+
+    @Override
+    @RequiresPermission("system:dept:update")
+    public ResponseEntity<DeptDto> updateDept(String id, DeptWriteDto deptWrite) {
+        return ResponseEntity.ok(AdminViews.dept(org.updateDept(Ids.parse(id), AdminViews.deptCommand(deptWrite))));
+    }
+
+    @Override
+    @RequiresPermission("system:dept:update")
+    public ResponseEntity<Void> deleteDept(String id) {
+        org.deleteDept(Ids.parse(id));
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @RequiresPermission("system:post:list")
+    public ResponseEntity<List<PostDto>> listPosts() {
+        return ResponseEntity.ok(org.posts().stream().map(AdminViews::post).toList());
+    }
+
+    @Override
+    @RequiresPermission("system:post:update")
+    public ResponseEntity<PostDto> createPost(PostWriteDto postWrite) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(AdminViews.post(org.createPost(AdminViews.postCommand(postWrite))));
+    }
+
+    @Override
+    @RequiresPermission("system:post:update")
+    public ResponseEntity<PostDto> updatePost(String id, PostWriteDto postWrite) {
+        return ResponseEntity.ok(AdminViews.post(org.updatePost(Ids.parse(id), AdminViews.postCommand(postWrite))));
+    }
+
+    @Override
+    @RequiresPermission("system:post:update")
+    public ResponseEntity<Void> deletePost(String id) {
+        org.deletePost(Ids.parse(id));
+        return ResponseEntity.noContent().build();
+    }
+}

@@ -1,0 +1,25 @@
+package {{ package_name }}.admin.security;
+
+import {{ package_name }}.common.security.CurrentUser;
+
+/** 把当前登录用户放在线程里，请求结束时必须清除。 */
+public final class AdminHolder {
+
+    private static final ThreadLocal<AdminPrincipal> HOLDER = new ThreadLocal<>();
+
+    private AdminHolder() {}
+
+    public static AdminPrincipal current() {
+        return HOLDER.get();
+    }
+
+    public static void set(AdminPrincipal principal) {
+        HOLDER.set(principal);
+        CurrentUser.set(principal.userId());
+    }
+
+    public static void clear() {
+        HOLDER.remove();
+        CurrentUser.clear();
+    }
+}

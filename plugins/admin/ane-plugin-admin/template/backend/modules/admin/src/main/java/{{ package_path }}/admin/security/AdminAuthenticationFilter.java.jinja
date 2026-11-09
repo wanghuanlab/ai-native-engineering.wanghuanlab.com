@@ -1,0 +1,105 @@
+package {{ package_name }}.admin.security;
+
+import {{ package_name }}.admin.service.AdminDirectory;
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import {{ package_name }}.common.web.TraceIdFilter;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.slf4j.MDC;
+import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
+
+/** 解析访问令牌并写入 {@link AdminHolder}。公开的登录接口不要求令牌。 */
+public class AdminAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtTokenService tokens;
+    private final RedisAdminStore store;
+    private final AdminDirectory directory;
+    private final ObjectMapper mapper;
+
+    public AdminAuthenticationFilter(
+            JwtTokenService tokens, RedisAdminStore store, AdminDirectory directory, ObjectMapper mapper) {
+        this.tokens = tokens;
+        this.store = store;
+        this.directory = directory;
+        this.mapper = mapper;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+        try {
+            String header = request.getHeader("Authorization");
+            boolean bearer = header != null && header.startsWith("Bearer ");
+            if (bearer || protectedAdmin(request)) {
+                authenticate(header, protectedAdmin(request));
+            }
+            chain.doFilter(request, response);
+        } catch (BizException ex) {
+            writeProblem(response, ex);
+        } finally {
+            AdminHolder.clear();
+        }
+    }
+
+    private void authenticate(String header, boolean required) {
+        if (header == null || !header.startsWith("Bearer ")) {
+            if (required) {
+                throw new BizException(CommonErrorCode.UNAUTHORIZED);
+            }
+            return;
+        }
+        String token = header.substring("Bearer ".length()).trim();
+        JwtTokenService.ParsedAccess access;
+        try {
+            access = tokens.parse(token);
+        } catch (JwtException | IllegalArgumentException ex) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        if (store.revoked(access.jti())) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        AdminHolder.set(directory.load(access.userId()).withAccess(access.jti(), access.expiresAt()));
+    }
+
+    private static boolean protectedAdmin(HttpServletRequest request) {
+        if (!request.getRequestURI().startsWith("/api/admin/")) {
+            return false;
+        }
+        String method = request.getMethod();
+        String path = request.getRequestURI();
+        if ("POST".equals(method) && "/api/admin/captcha".equals(path)) {
+            return false;
+        }
+        if ("POST".equals(method) && "/api/admin/session".equals(path)) {
+            return false;
+        }
+        return !("POST".equals(method) && "/api/admin/session/refresh".equals(path));
+    }
+
+    private void writeProblem(HttpServletResponse response, BizException ex) throws IOException {
+        if (response.isCommitted()) {
+            return;
+        }
+        response.setStatus(ex.errorCode().status().value());
+        response.setContentType("application/problem+json");
+        response.setCharacterEncoding("UTF-8");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("title", ex.errorCode().message());
+        body.put("status", ex.errorCode().status().value());
+        body.put("detail", ex.getMessage());
+        body.put("code", ex.errorCode().code());
+        String traceId = MDC.get(TraceIdFilter.MDC_KEY);
+        if (traceId != null) {
+            body.put("traceId", traceId);
+        }
+        mapper.writeValue(response.getWriter(), body);
+    }
+}

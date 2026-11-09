@@ -1,0 +1,59 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 部门。ancestors 是从根到父部门的 id，用逗号分隔，不含自己。 */
+@Entity
+@Table(name = "adm_dept")
+@SoftDelete(columnName = "deleted")
+public class Dept extends BaseEntity {
+
+    private Long parentId;
+
+    @Column(nullable = false, length = 64)
+    private String name;
+
+    @Column(nullable = false)
+    private Integer sortOrder;
+
+    @Column(nullable = false, length = 500)
+    private String ancestors;
+
+    protected Dept() {}
+
+    public static Dept create(Long parentId, String name, Integer sortOrder, String ancestors) {
+        Dept dept = new Dept();
+        dept.parentId = parentId;
+        dept.name = name;
+        dept.sortOrder = sortOrder;
+        dept.ancestors = ancestors == null ? "" : ancestors;
+        return dept;
+    }
+
+    public void rename(Long parentId, String name, Integer sortOrder, String ancestors) {
+        this.parentId = parentId;
+        this.name = name;
+        this.sortOrder = sortOrder;
+        this.ancestors = ancestors == null ? "" : ancestors;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public String getAncestors() {
+        return ancestors;
+    }
+}

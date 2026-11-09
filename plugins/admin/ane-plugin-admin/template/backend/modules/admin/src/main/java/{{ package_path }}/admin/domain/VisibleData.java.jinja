@@ -1,0 +1,26 @@
+package {{ package_name }}.admin.domain;
+
+import java.util.Set;
+
+/**
+ * 一次查询允许看到的部门。
+ * unrestricted 为真时忽略另外两个字段；selfOnly 为真时用户列表只剩当前用户，部门列表仍看 deptIds。
+ */
+public record VisibleData(boolean unrestricted, boolean selfOnly, Set<Long> deptIds) {
+
+    public VisibleData {
+        deptIds = deptIds == null ? Set.of() : Set.copyOf(deptIds);
+    }
+
+    public static VisibleData all() {
+        return new VisibleData(true, false, Set.of());
+    }
+
+    public static VisibleData self(Set<Long> deptIds) {
+        return new VisibleData(false, true, deptIds);
+    }
+
+    public static VisibleData depts(Set<Long> deptIds) {
+        return new VisibleData(false, false, deptIds);
+    }
+}

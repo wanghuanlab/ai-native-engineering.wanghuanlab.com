@@ -1,0 +1,42 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.error.ErrorCode;
+import org.springframework.http.HttpStatus;
+
+/** 认证与权限模块的业务错误码，号段 B01xx。 */
+public enum AdminErrorCode implements ErrorCode {
+    BAD_CAPTCHA("B0101", "验证码不正确", HttpStatus.BAD_REQUEST),
+    BAD_CREDENTIALS("B0102", "账号或密码不正确", HttpStatus.UNAUTHORIZED),
+    USER_DISABLED("B0103", "账号已停用", HttpStatus.FORBIDDEN),
+    USERNAME_TAKEN("B0104", "用户名已存在", HttpStatus.CONFLICT),
+    PASSWORD_TOO_SHORT("B0105", "密码至少 8 位", HttpStatus.BAD_REQUEST),
+    CODE_TAKEN("B0106", "编码已存在", HttpStatus.CONFLICT),
+    DEPT_IN_USE("B0107", "部门下仍有用户，不能删除", HttpStatus.CONFLICT),
+    CANNOT_DELETE_SELF("B0108", "不能删除当前登录用户", HttpStatus.CONFLICT),
+    MENU_IN_USE("B0109", "菜单下仍有子节点，不能删除", HttpStatus.CONFLICT);
+
+    private final String code;
+    private final String message;
+    private final HttpStatus status;
+
+    AdminErrorCode(String code, String message, HttpStatus status) {
+        this.code = code;
+        this.message = message;
+        this.status = status;
+    }
+
+    @Override
+    public String code() {
+        return code;
+    }
+
+    @Override
+    public String message() {
+        return message;
+    }
+
+    @Override
+    public HttpStatus status() {
+        return status;
+    }
+}

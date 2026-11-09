@@ -1,0 +1,192 @@
+package {{ package_name }}.admin;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import {{ package_name }}.admin.security.AdminAuthenticationFilter;
+import {{ package_name }}.support.PostgresContainerConfig;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.testcontainers.containers.GenericContainer;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+
+/** 验证码登录、注销，以及部门数据范围把其他部门的用户藏起来。 */
+@SpringBootTest
+@Import(PostgresContainerConfig.class)
+class AdminLoginIT {
+
+    @SuppressWarnings("resource")
+    static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
+
+    static {
+        REDIS.start();
+    }
+
+    @DynamicPropertySource
+    static void redis(DynamicPropertyRegistry registry) {
+        registry.add("spring.data.redis.host", REDIS::getHost);
+        registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
+    }
+
+    @Autowired
+    private WebApplicationContext context;
+
+    @Autowired
+    private FilterRegistrationBean<AdminAuthenticationFilter> authenticationFilter;
+
+    @Autowired
+    private StringRedisTemplate redis;
+
+    @Autowired
+    private ObjectMapper mapper;
+
+    @Test
+    void loginRefreshAndDepartmentScope() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(authenticationFilter.getFilter())
+                .build();
+        mockMvc.perform(get("/api/admin/me")).andExpect(status().isUnauthorized());
+
+        JsonNode admin = login(mockMvc, "admin", "Admin@123");
+        String access = admin.get("accessToken").asText();
+        JsonNode me = json(mockMvc.perform(get("/api/admin/me").header("Authorization", "Bearer " + access))
+                .andExpect(status().isOk())
+                .andReturn());
+        assertThat(me.get("username").asText()).isEqualTo("admin");
+        assertThat(me.get("permissions").toString()).contains("system:user:list");
+
+        JsonNode refreshed = json(mockMvc.perform(post("/api/admin/session/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(mapper.createObjectNode()
+                                .put("refreshToken", admin.get("refreshToken").asText()))))
+                .andExpect(status().isOk())
+                .andReturn());
+        access = refreshed.get("accessToken").asText();
+
+        ObjectNode dept = mapper.createObjectNode().put("name", "分部").put("sortOrder", 2);
+        JsonNode createdDept = json(mockMvc.perform(post("/api/admin/depts")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(dept)))
+                .andExpect(status().isCreated())
+                .andReturn());
+
+        ObjectNode role = mapper.createObjectNode();
+        role.put("code", "clerk");
+        role.put("name", "职员");
+        role.put("dataScope", "DEPT");
+        role.put("enabled", true);
+        role.putArray("menuIds").add("11");
+        role.putArray("deptIds");
+        JsonNode createdRole = json(mockMvc.perform(post("/api/admin/roles")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(role)))
+                .andExpect(status().isCreated())
+                .andReturn());
+
+        createUser(mockMvc, access, "alice", "1", createdRole.get("id").asText());
+        createUser(
+                mockMvc,
+                access,
+                "bob",
+                createdDept.get("id").asText(),
+                createdRole.get("id").asText());
+
+        mockMvc.perform(post("/api/admin/users")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(userJson(
+                                "shorty", "short", "1", createdRole.get("id").asText())))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/admin/users/1").header("Authorization", "Bearer " + access))
+                .andExpect(status().isConflict());
+        mockMvc.perform(delete("/api/admin/depts/1").header("Authorization", "Bearer " + access))
+                .andExpect(status().isConflict());
+        mockMvc.perform(delete("/api/admin/menus/10").header("Authorization", "Bearer " + access))
+                .andExpect(status().isConflict());
+
+        JsonNode alice = login(mockMvc, "alice", "Clerk@123");
+        JsonNode page = json(mockMvc.perform(get("/api/admin/users")
+                        .header(
+                                "Authorization",
+                                "Bearer " + alice.get("accessToken").asText()))
+                .andExpect(status().isOk())
+                .andReturn());
+        assertThat(usernames(page.get("items"))).contains("admin", "alice").doesNotContain("bob");
+
+        mockMvc.perform(delete("/api/admin/session").header("Authorization", "Bearer " + access))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/admin/me").header("Authorization", "Bearer " + access))
+                .andExpect(status().isUnauthorized());
+    }
+
+    private JsonNode login(MockMvc mockMvc, String username, String password) throws Exception {
+        MvcResult captcha = mockMvc.perform(post("/api/admin/captcha"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = mapper.readTree(captcha.getResponse().getContentAsString());
+        String captchaId = body.get("captchaId").asText();
+        String code = redis.opsForValue().get("ane:admin:captcha:" + captchaId);
+        assertThat(code).isNotBlank();
+        ObjectNode login = mapper.createObjectNode();
+        login.put("username", username);
+        login.put("password", password);
+        login.put("captchaId", captchaId);
+        login.put("captchaCode", code);
+        return json(mockMvc.perform(post("/api/admin/session")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(login)))
+                .andExpect(status().isOk())
+                .andReturn());
+    }
+
+    private void createUser(MockMvc mockMvc, String access, String username, String deptId, String roleId)
+            throws Exception {
+        mockMvc.perform(post("/api/admin/users")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(userJson(username, "Clerk@123", deptId, roleId)))
+                .andExpect(status().isCreated());
+    }
+
+    private String userJson(String username, String password, String deptId, String roleId) throws Exception {
+        ObjectNode user = mapper.createObjectNode();
+        user.put("username", username);
+        user.put("nickname", username);
+        user.put("password", password);
+        user.put("deptId", deptId);
+        user.put("enabled", true);
+        user.putArray("roleIds").add(roleId);
+        user.putArray("postIds");
+        return mapper.writeValueAsString(user);
+    }
+
+    private JsonNode json(MvcResult result) throws Exception {
+        return mapper.readTree(result.getResponse().getContentAsString());
+    }
+
+    private static java.util.List<String> usernames(JsonNode items) {
+        ArrayNode array = (ArrayNode) items;
+        java.util.List<String> names = new java.util.ArrayList<>();
+        array.forEach(item -> names.add(item.get("username").asText()));
+        return names;
+    }
+}

@@ -1,0 +1,10 @@
+# plugin:admin:config
+# 访问令牌密钥至少 32 字节。生产环境用 ADMIN_JWT_SECRET 覆盖，不要使用下面的开发默认值。
+ane.admin.jwt-secret=${ADMIN_JWT_SECRET:dev-only-change-me-please-32bytes!!}
+ane.admin.access-ttl={{ jwt_access_ttl }}
+ane.admin.refresh-ttl=P7D
+ane.admin.captcha-ttl=PT2M
+ane.admin.data-scope-enabled={% if data_scope_enabled %}true{% else %}false{% endif %}
+
+spring.data.redis.host=${REDIS_HOST:localhost}
+spring.data.redis.port=${REDIS_PORT:6379}

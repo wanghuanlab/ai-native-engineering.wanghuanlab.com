@@ -1,0 +1,180 @@
+-- 认证与权限。方言：人大金仓 KingbaseES（类型映射待第 0 阶段验证确认）
+-- 回退方式：按关联表、菜单、用户、角色、岗位、部门的顺序 DROP。
+
+CREATE TABLE adm_dept (
+    id          BIGINT                   NOT NULL,
+    parent_id   BIGINT,
+    name        VARCHAR(64)              NOT NULL,
+    sort_order  INTEGER                  NOT NULL,
+    ancestors   VARCHAR(500)             NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by  BIGINT                   NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by  BIGINT                   NOT NULL,
+    version     INTEGER                  NOT NULL DEFAULT 0,
+    deleted     BOOLEAN                   NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_dept PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_post (
+    id          BIGINT                   NOT NULL,
+    code        VARCHAR(64)              NOT NULL,
+    name        VARCHAR(64)              NOT NULL,
+    sort_order  INTEGER                  NOT NULL,
+    enabled     BOOLEAN                   NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by  BIGINT                   NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by  BIGINT                   NOT NULL,
+    version     INTEGER                  NOT NULL DEFAULT 0,
+    deleted     BOOLEAN                   NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_post PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_role (
+    id          BIGINT                   NOT NULL,
+    code        VARCHAR(64)              NOT NULL,
+    name        VARCHAR(64)              NOT NULL,
+    data_scope  VARCHAR(32)              NOT NULL,
+    enabled     BOOLEAN                   NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by  BIGINT                   NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by  BIGINT                   NOT NULL,
+    version     INTEGER                  NOT NULL DEFAULT 0,
+    deleted     BOOLEAN                   NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_role PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_user (
+    id            BIGINT                   NOT NULL,
+    dept_id       BIGINT                   NOT NULL,
+    username      VARCHAR(64)              NOT NULL,
+    password_hash VARCHAR(100)             NOT NULL,
+    nickname      VARCHAR(64)              NOT NULL,
+    enabled       BOOLEAN                   NOT NULL,
+    created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by    BIGINT                   NOT NULL,
+    updated_at    TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by    BIGINT                   NOT NULL,
+    version       INTEGER                  NOT NULL DEFAULT 0,
+    deleted       BOOLEAN                   NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_user PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_menu (
+    id          BIGINT                   NOT NULL,
+    parent_id   BIGINT,
+    name        VARCHAR(64)              NOT NULL,
+    path        VARCHAR(128),
+    component   VARCHAR(128),
+    permission  VARCHAR(128),
+    menu_type   VARCHAR(32)              NOT NULL,
+    sort_order  INTEGER                  NOT NULL,
+    visible     BOOLEAN                   NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by  BIGINT                   NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by  BIGINT                   NOT NULL,
+    version     INTEGER                  NOT NULL DEFAULT 0,
+    deleted     BOOLEAN                   NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_menu PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_user_role (
+    id         BIGINT  NOT NULL,
+    user_id    BIGINT  NOT NULL,
+    role_id    BIGINT  NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by BIGINT  NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by BIGINT  NOT NULL,
+    version    INTEGER NOT NULL DEFAULT 0,
+    deleted    BOOLEAN  NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_user_role PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_user_post (
+    id         BIGINT  NOT NULL,
+    user_id    BIGINT  NOT NULL,
+    post_id    BIGINT  NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by BIGINT  NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by BIGINT  NOT NULL,
+    version    INTEGER NOT NULL DEFAULT 0,
+    deleted    BOOLEAN  NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_user_post PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_role_menu (
+    id         BIGINT  NOT NULL,
+    role_id    BIGINT  NOT NULL,
+    menu_id    BIGINT  NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by BIGINT  NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by BIGINT  NOT NULL,
+    version    INTEGER NOT NULL DEFAULT 0,
+    deleted    BOOLEAN  NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_role_menu PRIMARY KEY (id)
+);
+
+CREATE TABLE adm_role_dept (
+    id         BIGINT  NOT NULL,
+    role_id    BIGINT  NOT NULL,
+    dept_id    BIGINT  NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by BIGINT  NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by BIGINT  NOT NULL,
+    version    INTEGER NOT NULL DEFAULT 0,
+    deleted    BOOLEAN  NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_adm_role_dept PRIMARY KEY (id)
+);
+
+CREATE INDEX idx_adm_user_username ON adm_user (username);
+CREATE INDEX idx_adm_user_dept ON adm_user (dept_id);
+
+-- 初始数据。密码是 Admin@123 的 BCrypt，登录后应立即修改。
+INSERT INTO adm_dept (id, parent_id, name, sort_order, ancestors, created_at, created_by, updated_at, updated_by, version, deleted)
+VALUES (1, NULL, '总部', 1, '', CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE);
+
+INSERT INTO adm_post (id, code, name, sort_order, enabled, created_at, created_by, updated_at, updated_by, version, deleted)
+VALUES (1, 'staff', '职员', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE);
+
+INSERT INTO adm_role (id, code, name, data_scope, enabled, created_at, created_by, updated_at, updated_by, version, deleted)
+VALUES (1, 'admin', '管理员', 'ALL', TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE);
+
+INSERT INTO adm_user (id, dept_id, username, password_hash, nickname, enabled, created_at, created_by, updated_at, updated_by, version, deleted)
+VALUES (1, 1, '{{ initial_admin_username }}', '$2a$10$E70dfmuzYY8OZwV5RMSGzevCli7R/83HB/dSv8aevdpPmNuxtHqle', '管理员', TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE);
+
+INSERT INTO adm_user_role (id, user_id, role_id, created_at, created_by, updated_at, updated_by, version, deleted)
+VALUES (1, 1, 1, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE);
+
+INSERT INTO adm_user_post (id, user_id, post_id, created_at, created_by, updated_at, updated_by, version, deleted)
+VALUES (1, 1, 1, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE);
+
+INSERT INTO adm_menu (id, parent_id, name, path, component, permission, menu_type, sort_order, visible, created_at, created_by, updated_at, updated_by, version, deleted) VALUES
+(10, NULL, '系统管理', 'system', NULL, NULL, 'DIR', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(11, 10, '用户管理', 'users', 'admin/users', 'system:user:list', 'MENU', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(12, 10, '角色管理', 'roles', 'admin/roles', 'system:role:list', 'MENU', 2, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(13, 10, '菜单管理', 'menus', 'admin/menus', 'system:menu:list', 'MENU', 3, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(14, 10, '部门管理', 'depts', 'admin/depts', 'system:dept:list', 'MENU', 4, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(15, 10, '岗位管理', 'posts', 'admin/posts', 'system:post:list', 'MENU', 5, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(16, 11, '用户新增', NULL, NULL, 'system:user:create', 'BUTTON', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(17, 11, '用户修改', NULL, NULL, 'system:user:update', 'BUTTON', 2, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(18, 11, '用户删除', NULL, NULL, 'system:user:delete', 'BUTTON', 3, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(19, 12, '角色维护', NULL, NULL, 'system:role:update', 'BUTTON', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(20, 13, '菜单维护', NULL, NULL, 'system:menu:update', 'BUTTON', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(21, 14, '部门维护', NULL, NULL, 'system:dept:update', 'BUTTON', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE),
+(22, 15, '岗位维护', NULL, NULL, 'system:post:update', 'BUTTON', 1, TRUE, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE);
+
+INSERT INTO adm_role_menu (id, role_id, menu_id, created_at, created_by, updated_at, updated_by, version, deleted)
+SELECT 100 + id, 1, id, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0, 0, FALSE FROM adm_menu;
+
+COMMENT ON TABLE adm_user IS '用户';
+COMMENT ON TABLE adm_role IS '角色';
+COMMENT ON TABLE adm_menu IS '菜单与权限';
+COMMENT ON TABLE adm_dept IS '部门';
+COMMENT ON TABLE adm_post IS '岗位';

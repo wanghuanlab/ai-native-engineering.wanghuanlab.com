@@ -2,3 +2,7 @@ example:
   description: 最小示例插件，用来验证创建时引入、创建后引入和升级
   local: plugins/example
   git: ""
+admin:
+  description: 用户、角色、菜单、部门、岗位、验证码和登录认证
+  local: plugins/admin/ane-plugin-admin
+  git: ""

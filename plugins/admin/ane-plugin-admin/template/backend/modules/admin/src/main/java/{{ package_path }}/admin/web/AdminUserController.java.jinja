@@ -1,0 +1,67 @@
+package {{ package_name }}.admin.web;
+
+import {{ package_name }}.admin.domain.User;
+import {{ package_name }}.admin.service.UserAdminService;
+import {{ package_name }}.admin.web.api.AdminUsersApi;
+import {{ package_name }}.admin.web.dto.UserDto;
+import {{ package_name }}.admin.web.dto.UserPageDto;
+import {{ package_name }}.admin.web.dto.UserWriteDto;
+import {{ package_name }}.common.security.RequiresPermission;
+import {{ package_name }}.common.web.Ids;
+import {{ package_name }}.common.web.Pagination;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+/** 用户管理接口。 */
+@RestController
+public class AdminUserController implements AdminUsersApi {
+
+    private final UserAdminService users;
+
+    public AdminUserController(UserAdminService users) {
+        this.users = users;
+    }
+
+    @Override
+    @RequiresPermission("system:user:list")
+    public ResponseEntity<UserPageDto> listUsers(Integer page, Integer size) {
+        Page<User> result = users.list(Pagination.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
+        UserPageDto body = new UserPageDto()
+                .total(result.getTotalElements())
+                .items(result.map(this::view).getContent());
+        return ResponseEntity.ok(body);
+    }
+
+    @Override
+    @RequiresPermission("system:user:list")
+    public ResponseEntity<UserDto> getUser(String id) {
+        return ResponseEntity.ok(view(users.get(Ids.parse(id))));
+    }
+
+    @Override
+    @RequiresPermission("system:user:create")
+    public ResponseEntity<UserDto> createUser(UserWriteDto userWrite) {
+        User created = users.create(AdminViews.userCommand(userWrite));
+        return ResponseEntity.status(HttpStatus.CREATED).body(view(created));
+    }
+
+    @Override
+    @RequiresPermission("system:user:update")
+    public ResponseEntity<UserDto> updateUser(String id, UserWriteDto userWrite) {
+        return ResponseEntity.ok(view(users.update(Ids.parse(id), AdminViews.userCommand(userWrite))));
+    }
+
+    @Override
+    @RequiresPermission("system:user:delete")
+    public ResponseEntity<Void> deleteUser(String id) {
+        users.delete(Ids.parse(id));
+        return ResponseEntity.noContent().build();
+    }
+
+    private UserDto view(User user) {
+        return AdminViews.user(user, users.roleIds(user.getId()), users.postIds(user.getId()));
+    }
+}

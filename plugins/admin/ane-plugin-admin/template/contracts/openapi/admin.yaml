@@ -1,0 +1,678 @@
+openapi: 3.0.3
+info:
+  title: 认证与权限
+  version: 1.0.0
+  description: 用户、角色、菜单、部门、岗位和登录。
+servers:
+  - url: /
+tags:
+  - name: AdminSession
+    description: 验证码和登录
+  - name: AdminUsers
+    description: 用户
+  - name: AdminRoles
+    description: 角色
+  - name: AdminMenus
+    description: 菜单
+  - name: AdminDepts
+    description: 部门
+  - name: AdminPosts
+    description: 岗位
+paths:
+  /api/admin/captcha:
+    post:
+      tags: [AdminSession]
+      operationId: issueCaptcha
+      summary: 签发验证码
+      responses:
+        '200':
+          description: 签发成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Captcha'
+  /api/admin/session:
+    post:
+      tags: [AdminSession]
+      operationId: login
+      summary: 登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResult'
+    delete:
+      tags: [AdminSession]
+      operationId: logout
+      summary: 注销当前访问令牌
+      responses:
+        '204':
+          description: 已注销
+  /api/admin/session/refresh:
+    post:
+      tags: [AdminSession]
+      operationId: refreshSession
+      summary: 用刷新令牌换新的访问令牌
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: 换发成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResult'
+  /api/admin/me:
+    get:
+      tags: [AdminSession]
+      operationId: currentAccount
+      summary: 当前登录账号和可见菜单
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+  /api/admin/users:
+    get:
+      tags: [AdminUsers]
+      operationId: listUsers
+      summary: 分页查询用户
+      parameters:
+        - $ref: './common.yaml#/components/parameters/Page'
+        - $ref: './common.yaml#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+    post:
+      tags: [AdminUsers]
+      operationId: createUser
+      summary: 新建用户
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserWrite'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /api/admin/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [AdminUsers]
+      operationId: getUser
+      summary: 查询用户
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      tags: [AdminUsers]
+      operationId: updateUser
+      summary: 修改用户
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserWrite'
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      tags: [AdminUsers]
+      operationId: deleteUser
+      summary: 删除用户
+      responses:
+        '204':
+          description: 删除成功
+  /api/admin/roles:
+    get:
+      tags: [AdminRoles]
+      operationId: listRoles
+      summary: 查询全部角色
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+    post:
+      tags: [AdminRoles]
+      operationId: createRole
+      summary: 新建角色
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleWrite'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+  /api/admin/roles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [AdminRoles]
+      operationId: updateRole
+      summary: 修改角色
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleWrite'
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+    delete:
+      tags: [AdminRoles]
+      operationId: deleteRole
+      summary: 删除角色
+      responses:
+        '204':
+          description: 删除成功
+  /api/admin/menus:
+    get:
+      tags: [AdminMenus]
+      operationId: listMenus
+      summary: 查询菜单树
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MenuNode'
+    post:
+      tags: [AdminMenus]
+      operationId: createMenu
+      summary: 新建菜单
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuWrite'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuNode'
+  /api/admin/menus/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [AdminMenus]
+      operationId: updateMenu
+      summary: 修改菜单
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuWrite'
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuNode'
+    delete:
+      tags: [AdminMenus]
+      operationId: deleteMenu
+      summary: 删除菜单
+      responses:
+        '204':
+          description: 删除成功
+  /api/admin/depts:
+    get:
+      tags: [AdminDepts]
+      operationId: listDepts
+      summary: 查询可见部门
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dept'
+    post:
+      tags: [AdminDepts]
+      operationId: createDept
+      summary: 新建部门
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeptWrite'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dept'
+  /api/admin/depts/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [AdminDepts]
+      operationId: updateDept
+      summary: 修改部门
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeptWrite'
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dept'
+    delete:
+      tags: [AdminDepts]
+      operationId: deleteDept
+      summary: 删除部门
+      responses:
+        '204':
+          description: 删除成功
+  /api/admin/posts:
+    get:
+      tags: [AdminPosts]
+      operationId: listPosts
+      summary: 查询全部岗位
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+    post:
+      tags: [AdminPosts]
+      operationId: createPost
+      summary: 新建岗位
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostWrite'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+  /api/admin/posts/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [AdminPosts]
+      operationId: updatePost
+      summary: 修改岗位
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostWrite'
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+    delete:
+      tags: [AdminPosts]
+      operationId: deletePost
+      summary: 删除岗位
+      responses:
+        '204':
+          description: 删除成功
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: './common.yaml#/components/schemas/Id'
+  schemas:
+    Captcha:
+      type: object
+      required: [captchaId, image]
+      properties:
+        captchaId:
+          type: string
+        image:
+          type: string
+          description: PNG 的 Base64，不含 data URL 前缀
+    LoginRequest:
+      type: object
+      required: [username, password, captchaId, captchaCode]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 64
+        password:
+          type: string
+          minLength: 1
+          maxLength: 72
+        captchaId:
+          type: string
+        captchaCode:
+          type: string
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    LoginResult:
+      type: object
+      required: [accessToken, refreshToken, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+          description: 访问令牌剩余秒数
+    Account:
+      type: object
+      required: [id, username, nickname, permissions, menus]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        username:
+          type: string
+        nickname:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        menus:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuNode'
+    User:
+      type: object
+      required: [id, username, nickname, deptId, enabled, roleIds, postIds]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        username:
+          type: string
+        nickname:
+          type: string
+        deptId:
+          $ref: './common.yaml#/components/schemas/Id'
+        enabled:
+          type: boolean
+        roleIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+        postIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+    UserPage:
+      type: object
+      required: [total, items]
+      properties:
+        total:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    UserWrite:
+      type: object
+      required: [username, nickname, deptId, enabled, roleIds, postIds]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 64
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 64
+        password:
+          type: string
+          maxLength: 72
+          description: 新建时必填；修改时留空表示不改密码
+        deptId:
+          $ref: './common.yaml#/components/schemas/Id'
+        enabled:
+          type: boolean
+        roleIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+        postIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+    Role:
+      type: object
+      required: [id, code, name, dataScope, enabled, menuIds, deptIds]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        code:
+          type: string
+        name:
+          type: string
+        dataScope:
+          $ref: '#/components/schemas/DataScope'
+        enabled:
+          type: boolean
+        menuIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+        deptIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+    RoleWrite:
+      type: object
+      required: [code, name, dataScope, enabled, menuIds, deptIds]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        dataScope:
+          $ref: '#/components/schemas/DataScope'
+        enabled:
+          type: boolean
+        menuIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+        deptIds:
+          type: array
+          items:
+            $ref: './common.yaml#/components/schemas/Id'
+    DataScope:
+      type: string
+      enum: [ALL, DEPT_AND_CHILD, CUSTOM, DEPT, SELF]
+    MenuNode:
+      type: object
+      required: [id, name, menuType, sortOrder, visible]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        parentId:
+          $ref: './common.yaml#/components/schemas/Id'
+        name:
+          type: string
+        path:
+          type: string
+        component:
+          type: string
+        permission:
+          type: string
+        menuType:
+          $ref: '#/components/schemas/MenuType'
+        sortOrder:
+          type: integer
+        visible:
+          type: boolean
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuNode'
+    MenuWrite:
+      type: object
+      required: [name, menuType, sortOrder, visible]
+      properties:
+        parentId:
+          $ref: './common.yaml#/components/schemas/Id'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        path:
+          type: string
+          maxLength: 128
+        component:
+          type: string
+          maxLength: 128
+        permission:
+          type: string
+          maxLength: 128
+        menuType:
+          $ref: '#/components/schemas/MenuType'
+        sortOrder:
+          type: integer
+        visible:
+          type: boolean
+    MenuType:
+      type: string
+      enum: [DIR, MENU, BUTTON]
+    Dept:
+      type: object
+      required: [id, name, sortOrder]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        parentId:
+          $ref: './common.yaml#/components/schemas/Id'
+        name:
+          type: string
+        sortOrder:
+          type: integer
+    DeptWrite:
+      type: object
+      required: [name, sortOrder]
+      properties:
+        parentId:
+          $ref: './common.yaml#/components/schemas/Id'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        sortOrder:
+          type: integer
+    Post:
+      type: object
+      required: [id, code, name, sortOrder, enabled]
+      properties:
+        id:
+          $ref: './common.yaml#/components/schemas/Id'
+        code:
+          type: string
+        name:
+          type: string
+        sortOrder:
+          type: integer
+        enabled:
+          type: boolean
+    PostWrite:
+      type: object
+      required: [code, name, sortOrder, enabled]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        sortOrder:
+          type: integer
+        enabled:
+          type: boolean

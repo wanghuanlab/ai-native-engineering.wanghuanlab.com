@@ -1,0 +1,14 @@
+package {{ package_name }}.admin.domain;
+
+import java.util.Collection;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface RoleDeptRepository extends JpaRepository<RoleDept, Long> {
+
+    List<RoleDept> findByRoleIdIn(Collection<Long> roleIds);
+
+    List<RoleDept> findByRoleId(Long roleId);
+
+    void deleteByRoleId(Long roleId);
+}

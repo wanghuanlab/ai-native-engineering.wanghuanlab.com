@@ -1,0 +1,104 @@
+package {{ package_name }}.admin.security;
+
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Locale;
+import java.util.UUID;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+/** 验证码、刷新令牌和访问令牌注销名单。过期时间由 Redis 负责。 */
+@Component
+public class RedisAdminStore {
+
+    private final StringRedisTemplate redis;
+    private final AdminProperties properties;
+    private final SecureRandom random = new SecureRandom();
+
+    public RedisAdminStore(StringRedisTemplate redis, AdminProperties properties) {
+        this.redis = redis;
+        this.properties = properties;
+    }
+
+    public IssuedCaptcha issueCaptcha() {
+        String code = CaptchaImages.code(random);
+        String id = UUID.randomUUID().toString();
+        redis.opsForValue().set(captchaKey(id), code.toLowerCase(Locale.ROOT), properties.getCaptchaTtl());
+        return new IssuedCaptcha(id, CaptchaImages.pngBase64(code, random));
+    }
+
+    public boolean consumeCaptcha(String id, String code) {
+        if (id == null || code == null) {
+            return false;
+        }
+        String stored = redis.opsForValue().getAndDelete(captchaKey(id));
+        return stored != null && stored.equals(code.trim().toLowerCase(Locale.ROOT));
+    }
+
+    public String issueRefresh(long userId) {
+        String previous = redis.opsForValue().get(userKey(userId));
+        if (previous != null) {
+            redis.delete(refreshKey(previous));
+        }
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        redis.opsForValue().set(refreshKey(token), Long.toString(userId), properties.getRefreshTtl());
+        redis.opsForValue().set(userKey(userId), token, properties.getRefreshTtl());
+        return token;
+    }
+
+    public Long consumeRefresh(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        String userId = redis.opsForValue().getAndDelete(refreshKey(token));
+        if (userId == null) {
+            return null;
+        }
+        redis.delete(userKey(Long.parseLong(userId)));
+        return Long.valueOf(userId);
+    }
+
+    public void revokeRefresh(long userId) {
+        String token = redis.opsForValue().getAndDelete(userKey(userId));
+        if (token != null) {
+            redis.delete(refreshKey(token));
+        }
+    }
+
+    public void revoke(String jti, Instant expiresAt) {
+        if (jti == null || expiresAt == null) {
+            return;
+        }
+        Duration ttl = Duration.between(Instant.now(), expiresAt);
+        if (ttl.isZero() || ttl.isNegative()) {
+            return;
+        }
+        redis.opsForValue().set(revokedKey(jti), "1", ttl);
+    }
+
+    public boolean revoked(String jti) {
+        return Boolean.TRUE.equals(redis.hasKey(revokedKey(jti)));
+    }
+
+    private static String captchaKey(String id) {
+        return "ane:admin:captcha:" + id;
+    }
+
+    private static String refreshKey(String token) {
+        return "ane:admin:refresh:" + token;
+    }
+
+    private static String userKey(long userId) {
+        return "ane:admin:refresh-user:" + userId;
+    }
+
+    private static String revokedKey(String jti) {
+        return "ane:admin:revoked:" + jti;
+    }
+
+    public record IssuedCaptcha(String id, String image) {}
+}

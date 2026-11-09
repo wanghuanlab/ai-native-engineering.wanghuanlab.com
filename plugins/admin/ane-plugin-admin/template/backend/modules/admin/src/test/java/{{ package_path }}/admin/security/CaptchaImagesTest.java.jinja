@@ -1,0 +1,19 @@
+package {{ package_name }}.admin.security;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.security.SecureRandom;
+import java.util.Base64;
+import org.junit.jupiter.api.Test;
+
+class CaptchaImagesTest {
+
+    @Test
+    void codeIsFourCharactersAndImageIsPng() {
+        SecureRandom random = new SecureRandom();
+        String code = CaptchaImages.code(random);
+        assertThat(code).hasSize(4);
+        byte[] png = Base64.getDecoder().decode(CaptchaImages.pngBase64(code, random));
+        assertThat(png).startsWith((byte) 0x89, (byte) 'P', (byte) 'N', (byte) 'G');
+    }
+}

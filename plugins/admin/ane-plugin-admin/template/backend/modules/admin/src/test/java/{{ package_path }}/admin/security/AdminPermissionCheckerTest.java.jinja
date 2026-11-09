@@ -1,0 +1,28 @@
+package {{ package_name }}.admin.security;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import {{ package_name }}.admin.domain.VisibleData;
+import java.time.Instant;
+import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+class AdminPermissionCheckerTest {
+
+    private final AdminPermissionChecker checker = new AdminPermissionChecker();
+
+    @AfterEach
+    void clear() {
+        AdminHolder.clear();
+    }
+
+    @Test
+    void onlyTheSignedInUsersPermissionsPass() {
+        assertThat(checker.hasPermission("system:user:list")).isFalse();
+        AdminHolder.set(new AdminPrincipal(
+                1L, "admin", 1L, Set.of("system:user:list"), VisibleData.all(), "jti", Instant.now()));
+        assertThat(checker.hasPermission("system:user:list")).isTrue();
+        assertThat(checker.hasPermission("system:user:delete")).isFalse();
+    }
+}

@@ -1,0 +1,119 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 菜单或按钮。permission 为空的目录不参与权限判断。 */
+@Entity
+@Table(name = "adm_menu")
+@SoftDelete(columnName = "deleted")
+public class Menu extends BaseEntity {
+
+    private Long parentId;
+
+    @Column(nullable = false, length = 64)
+    private String name;
+
+    @Column(length = 128)
+    private String path;
+
+    @Column(length = 128)
+    private String component;
+
+    @Column(length = 128)
+    private String permission;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private MenuType menuType;
+
+    @Column(nullable = false)
+    private Integer sortOrder;
+
+    @Column(nullable = false)
+    private boolean visible;
+
+    protected Menu() {}
+
+    public static Menu create(
+            Long parentId,
+            String name,
+            String path,
+            String component,
+            String permission,
+            MenuType menuType,
+            Integer sortOrder,
+            boolean visible) {
+        Menu menu = new Menu();
+        menu.apply(parentId, name, path, component, permission, menuType, sortOrder, visible);
+        return menu;
+    }
+
+    public void change(
+            Long parentId,
+            String name,
+            String path,
+            String component,
+            String permission,
+            MenuType menuType,
+            Integer sortOrder,
+            boolean visible) {
+        apply(parentId, name, path, component, permission, menuType, sortOrder, visible);
+    }
+
+    private void apply(
+            Long parentId,
+            String name,
+            String path,
+            String component,
+            String permission,
+            MenuType menuType,
+            Integer sortOrder,
+            boolean visible) {
+        this.parentId = parentId;
+        this.name = name;
+        this.path = path;
+        this.component = component;
+        this.permission = permission;
+        this.menuType = menuType;
+        this.sortOrder = sortOrder;
+        this.visible = visible;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public String getComponent() {
+        return component;
+    }
+
+    public String getPermission() {
+        return permission;
+    }
+
+    public MenuType getMenuType() {
+        return menuType;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+}

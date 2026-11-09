@@ -1,0 +1,86 @@
+package {{ package_name }}.admin.web;
+
+import {{ package_name }}.admin.domain.User;
+import {{ package_name }}.admin.security.AdminHolder;
+import {{ package_name }}.admin.security.AdminPrincipal;
+import {{ package_name }}.admin.security.RedisAdminStore;
+import {{ package_name }}.admin.service.AdminDirectory;
+import {{ package_name }}.admin.service.AuthService;
+import {{ package_name }}.admin.service.UserAdminService;
+import {{ package_name }}.admin.web.api.AdminSessionApi;
+import {{ package_name }}.admin.web.dto.AccountDto;
+import {{ package_name }}.admin.web.dto.CaptchaDto;
+import {{ package_name }}.admin.web.dto.LoginRequestDto;
+import {{ package_name }}.admin.web.dto.LoginResultDto;
+import {{ package_name }}.admin.web.dto.RefreshRequestDto;
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import {{ package_name }}.common.web.Ids;
+import java.util.ArrayList;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+/** 验证码、登录、刷新、注销和当前账号。 */
+@RestController
+public class AdminSessionController implements AdminSessionApi {
+
+    private final AuthService auth;
+    private final AdminDirectory directory;
+    private final UserAdminService users;
+
+    public AdminSessionController(AuthService auth, AdminDirectory directory, UserAdminService users) {
+        this.auth = auth;
+        this.directory = directory;
+        this.users = users;
+    }
+
+    @Override
+    public ResponseEntity<CaptchaDto> issueCaptcha() {
+        RedisAdminStore.IssuedCaptcha issued = auth.captcha();
+        return ResponseEntity.ok(new CaptchaDto().captchaId(issued.id()).image(issued.image()));
+    }
+
+    @Override
+    public ResponseEntity<LoginResultDto> login(LoginRequestDto loginRequest) {
+        AuthService.LoginTokens tokens = auth.login(
+                loginRequest.getUsername(),
+                loginRequest.getPassword(),
+                loginRequest.getCaptchaId(),
+                loginRequest.getCaptchaCode());
+        return ResponseEntity.ok(tokens(tokens));
+    }
+
+    @Override
+    public ResponseEntity<LoginResultDto> refreshSession(RefreshRequestDto refreshRequest) {
+        return ResponseEntity.ok(tokens(auth.refresh(refreshRequest.getRefreshToken())));
+    }
+
+    @Override
+    public ResponseEntity<Void> logout() {
+        auth.logout();
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<AccountDto> currentAccount() {
+        AdminPrincipal principal = AdminHolder.current();
+        if (principal == null) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        User user = users.get(principal.userId());
+        AccountDto body = new AccountDto()
+                .id(Ids.format(user.getId()))
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .permissions(new ArrayList<>(principal.permissions()))
+                .menus(AdminViews.tree(directory.menusOf(principal.userId())));
+        return ResponseEntity.ok(body);
+    }
+
+    private static LoginResultDto tokens(AuthService.LoginTokens tokens) {
+        return new LoginResultDto()
+                .accessToken(tokens.accessToken())
+                .refreshToken(tokens.refreshToken())
+                .expiresIn(tokens.expiresIn());
+    }
+}

@@ -1,0 +1,37 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 自定义数据范围时，角色可以查看的部门。 */
+@Entity
+@Table(name = "adm_role_dept")
+@SoftDelete(columnName = "deleted")
+public class RoleDept extends BaseEntity {
+
+    @Column(nullable = false)
+    private Long roleId;
+
+    @Column(nullable = false)
+    private Long deptId;
+
+    protected RoleDept() {}
+
+    public static RoleDept link(Long roleId, Long deptId) {
+        RoleDept link = new RoleDept();
+        link.roleId = roleId;
+        link.deptId = deptId;
+        return link;
+    }
+
+    public Long getRoleId() {
+        return roleId;
+    }
+
+    public Long getDeptId() {
+        return deptId;
+    }
+}

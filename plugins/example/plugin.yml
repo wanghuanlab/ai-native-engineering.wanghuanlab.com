@@ -20,7 +20,7 @@ inserts:
   - file: backend/app/src/main/resources/application.yml
     marker: "# @plugin-config-end"
     id: config
-    content: "# plugin:example:config\nane:\n  sample:\n    enabled: true\n"
+    content: "  # plugin:example:config\n  sample:\n    enabled: true\n"
   - file: deploy/local/compose.yaml
     marker: "# @plugin-services-end"
     id: services

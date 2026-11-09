@@ -1,0 +1,15 @@
+package {{ package_name }}.admin.security;
+
+import {{ package_name }}.common.security.PermissionChecker;
+import org.springframework.stereotype.Component;
+
+/** 用当前登录用户的权限集替换基线默认的全部放行实现。 */
+@Component
+public class AdminPermissionChecker implements PermissionChecker {
+
+    @Override
+    public boolean hasPermission(String permission) {
+        AdminPrincipal principal = AdminHolder.current();
+        return principal != null && principal.permissions().contains(permission);
+    }
+}

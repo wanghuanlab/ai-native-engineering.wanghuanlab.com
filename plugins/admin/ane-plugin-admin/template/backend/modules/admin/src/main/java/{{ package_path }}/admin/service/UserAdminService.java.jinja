@@ -1,0 +1,183 @@
+package {{ package_name }}.admin.service;
+
+import {{ package_name }}.admin.domain.AdminErrorCode;
+import {{ package_name }}.admin.domain.DataScopes;
+import {{ package_name }}.admin.domain.DeptRepository;
+import {{ package_name }}.admin.domain.Passwords;
+import {{ package_name }}.admin.domain.PostRepository;
+import {{ package_name }}.admin.domain.RoleRepository;
+import {{ package_name }}.admin.domain.User;
+import {{ package_name }}.admin.domain.UserPost;
+import {{ package_name }}.admin.domain.UserPostRepository;
+import {{ package_name }}.admin.domain.UserRepository;
+import {{ package_name }}.admin.domain.UserRole;
+import {{ package_name }}.admin.domain.UserRoleRepository;
+import {{ package_name }}.admin.security.AdminHolder;
+import {{ package_name }}.admin.security.AdminPrincipal;
+import {{ package_name }}.admin.service.AdminCommands.UserCommand;
+import {{ package_name }}.common.error.BizException;
+import {{ package_name }}.common.error.CommonErrorCode;
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** 用户维护。列表受数据范围约束。 */
+@Service
+public class UserAdminService {
+
+    private final UserRepository users;
+    private final DeptRepository depts;
+    private final RoleRepository roles;
+    private final PostRepository posts;
+    private final UserRoleRepository userRoles;
+    private final UserPostRepository userPosts;
+    private final PasswordEncoder passwords;
+
+    public UserAdminService(
+            UserRepository users,
+            DeptRepository depts,
+            RoleRepository roles,
+            PostRepository posts,
+            UserRoleRepository userRoles,
+            UserPostRepository userPosts,
+            PasswordEncoder passwords) {
+        this.users = users;
+        this.depts = depts;
+        this.roles = roles;
+        this.posts = posts;
+        this.userRoles = userRoles;
+        this.userPosts = userPosts;
+        this.passwords = passwords;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<User> list(Pageable pageable) {
+        AdminPrincipal principal = current();
+        return users.findAll(DataScopes.users(principal.visible(), principal.userId()), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public User get(Long id) {
+        User user = required(id);
+        if (!visible(user)) {
+            throw new BizException(CommonErrorCode.NOT_FOUND);
+        }
+        return user;
+    }
+
+    @Transactional
+    public User create(UserCommand command) {
+        Passwords.require(command.password());
+        ensureUnique(command.username(), null);
+        requireDept(command.deptId());
+        User user = User.create(
+                command.username(), command.nickname(), command.deptId(), passwords.encode(command.password()));
+        user.change(command.username(), command.nickname(), command.deptId(), command.enabled());
+        user = users.save(user);
+        replaceLinks(user.getId(), command);
+        return user;
+    }
+
+    @Transactional
+    public User update(Long id, UserCommand command) {
+        User user = required(id);
+        if (!visible(user)) {
+            throw new BizException(CommonErrorCode.NOT_FOUND);
+        }
+        ensureUnique(command.username(), id);
+        requireDept(command.deptId());
+        user.change(command.username(), command.nickname(), command.deptId(), command.enabled());
+        if (command.password() != null && !command.password().isBlank()) {
+            Passwords.require(command.password());
+            user.changePassword(passwords.encode(command.password()));
+        }
+        replaceLinks(id, command);
+        return user;
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        AdminPrincipal principal = current();
+        if (principal.userId() == id) {
+            throw new BizException(AdminErrorCode.CANNOT_DELETE_SELF);
+        }
+        User user = required(id);
+        if (!visible(user)) {
+            throw new BizException(CommonErrorCode.NOT_FOUND);
+        }
+        userRoles.deleteByUserId(id);
+        userPosts.deleteByUserId(id);
+        users.delete(user);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> roleIds(Long userId) {
+        return userRoles.findByUserId(userId).stream().map(UserRole::getRoleId).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> postIds(Long userId) {
+        return userPosts.findByUserId(userId).stream().map(UserPost::getPostId).toList();
+    }
+
+    private void replaceLinks(Long userId, UserCommand command) {
+        for (Long roleId : command.roleIds()) {
+            if (!roles.existsById(roleId)) {
+                throw new BizException(CommonErrorCode.NOT_FOUND);
+            }
+        }
+        for (Long postId : command.postIds()) {
+            if (!posts.existsById(postId)) {
+                throw new BizException(CommonErrorCode.NOT_FOUND);
+            }
+        }
+        userRoles.deleteByUserId(userId);
+        for (Long roleId : command.roleIds()) {
+            userRoles.save(UserRole.link(userId, roleId));
+        }
+        userPosts.deleteByUserId(userId);
+        for (Long postId : command.postIds()) {
+            userPosts.save(UserPost.link(userId, postId));
+        }
+    }
+
+    private void ensureUnique(String username, Long currentId) {
+        users.findByUsername(username)
+                .filter(found -> !found.getId().equals(currentId))
+                .ifPresent(found -> {
+                    throw new BizException(AdminErrorCode.USERNAME_TAKEN);
+                });
+    }
+
+    private void requireDept(Long deptId) {
+        if (!depts.existsById(deptId)) {
+            throw new BizException(CommonErrorCode.NOT_FOUND);
+        }
+    }
+
+    private User required(Long id) {
+        return users.findById(id).orElseThrow(() -> new BizException(CommonErrorCode.NOT_FOUND));
+    }
+
+    private boolean visible(User user) {
+        AdminPrincipal principal = current();
+        if (principal.visible().unrestricted()) {
+            return true;
+        }
+        if (principal.visible().selfOnly()) {
+            return principal.userId() == user.getId();
+        }
+        return principal.visible().deptIds().contains(user.getDeptId());
+    }
+
+    private static AdminPrincipal current() {
+        AdminPrincipal principal = AdminHolder.current();
+        if (principal == null) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        return principal;
+    }
+}

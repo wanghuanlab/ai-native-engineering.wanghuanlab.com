@@ -1,0 +1,60 @@
+package {{ package_name }}.admin.domain;
+
+import {{ package_name }}.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.SoftDelete;
+
+/** 岗位。 */
+@Entity
+@Table(name = "adm_post")
+@SoftDelete(columnName = "deleted")
+public class Post extends BaseEntity {
+
+    @Column(nullable = false, length = 64)
+    private String code;
+
+    @Column(nullable = false, length = 64)
+    private String name;
+
+    @Column(nullable = false)
+    private Integer sortOrder;
+
+    @Column(nullable = false)
+    private boolean enabled;
+
+    protected Post() {}
+
+    public static Post create(String code, String name, Integer sortOrder, boolean enabled) {
+        Post post = new Post();
+        post.code = code;
+        post.name = name;
+        post.sortOrder = sortOrder;
+        post.enabled = enabled;
+        return post;
+    }
+
+    public void change(String code, String name, Integer sortOrder, boolean enabled) {
+        this.code = code;
+        this.name = name;
+        this.sortOrder = sortOrder;
+        this.enabled = enabled;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+}

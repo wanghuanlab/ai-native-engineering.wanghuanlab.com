@@ -1,0 +1,36 @@
+package {{ package_name }}.admin.security;
+
+import {{ package_name }}.admin.service.AdminDirectory;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import tools.jackson.databind.ObjectMapper;
+
+/** 注册令牌过滤器和密码哈希。不启用 Spring Security 的过滤链。 */
+@Configuration
+@EnableConfigurationProperties(AdminProperties.class)
+public class AdminConfiguration {
+
+    @Bean
+    PasswordEncoder adminPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    JwtTokenService jwtTokenService(AdminProperties properties) {
+        return new JwtTokenService(properties);
+    }
+
+    @Bean
+    FilterRegistrationBean<AdminAuthenticationFilter> adminAuthenticationFilter(
+            JwtTokenService tokens, RedisAdminStore store, AdminDirectory directory, ObjectMapper mapper) {
+        FilterRegistrationBean<AdminAuthenticationFilter> registration =
+                new FilterRegistrationBean<>(new AdminAuthenticationFilter(tokens, store, directory, mapper));
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 20);
+        return registration;
+    }
+}

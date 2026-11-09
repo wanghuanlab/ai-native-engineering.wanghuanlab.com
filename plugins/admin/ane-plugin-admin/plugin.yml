@@ -1,0 +1,27 @@
+name: admin
+version: 0.1.0
+summary: 用户、角色、菜单、部门、岗位、验证码和 JWT 登录
+baseline:
+  min: "0.1.0"
+requires: []
+inserts:
+  - file: backend/pom.xml
+    marker: "<!-- @modules-end -->"
+    id: module
+    content: "        <!-- plugin:admin:module -->\n        <module>modules/admin</module>\n"
+  - file: backend/app/pom.xml
+    marker: "<!-- @module-deps-end -->"
+    id: dependency
+    content: "        <!-- plugin:admin:dependency -->\n        <dependency>\n            <groupId>{{ package_name }}</groupId>\n            <artifactId>{{ project_code }}-module-admin</artifactId>\n            <version>${project.version}</version>\n        </dependency>\n"
+  - file: docs/context/architecture.md
+    marker: "<!-- @module-table-end -->"
+    id: module-row
+    content: "<!-- plugin:admin:module-row -->\n| `admin` | 认证与权限 | B01xx | 用户、角色、菜单、部门、岗位 |\n"
+  - file: backend/app/src/main/resources/application.yml
+    marker: "# @plugin-config-end"
+    id: config
+    content: "  # plugin:admin:config\n  # 认证插件的可调参数在 application.properties 的 ane.admin.*。\n"
+  - file: deploy/local/compose.yaml
+    marker: "# @plugin-services-end"
+    id: services
+    content: "  # plugin:admin:services\n  redis:\n    image: redis:7-alpine\n    container_name: {{ project_code }}-redis\n    ports:\n      - \"6379:6379\"\n"
