@@ -28,6 +28,7 @@ npm run preview
 ## 内容来源
 
 - 文档阅读器在构建时直接读取仓库根目录的 `README.md`、`CHANGELOG.md` 和 `handbook/*.md`，正文以仓库文件为维护源。
+- 工程博客文章位于 `website/blog/*.md`，文件名即文章地址（`/?blog=<文件名>`），列表按头信息里的 `date` 倒序排列。文章开头用 `---` 包住 `title`、`description`、`date` 三项；正文里指向仓库文件的相对链接会自动转成官网手册入口。
 - 流程与角色文案位于 `src/content.ts`，应随手册和实际校验脚本一起核对，尤其注意 PM 确认、TL 审批、工程师验收及自动门禁的能力边界。
 - `scripts/training-assets.ts` 在开发时提供 `/training/`，在构建时输出 `training/index.html` 和 `training/assets/` 中的全部文件。
 - 培训入口 HTML 仅将指向上级 Markdown 手册的链接改为官网的 `?doc=` 阅读入口；不修改仓库中的原文件。独立交互图 HTML、JSON 和已有验证记录均按原始字节复制，保留证据对应关系。

@@ -1007,6 +1007,22 @@ h3 {
 .system-tabs > button:not([aria-pressed="true"]):hover {
   background: #e5eaf2;
 }
+.mode-tabs {
+  margin-top: 4px;
+}
+.mode-tabs > button[aria-pressed="true"] {
+  background: var(--accent);
+}
+.mode-note {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+  padding: 14px 20px 0;
+}
+.mode-note > a {
+  color: var(--accent);
+  margin-left: 4px;
+}
 .project-input {
   padding: 24px 20px;
 }

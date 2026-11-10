@@ -10,11 +10,14 @@ import {
 } from "vue";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { docs, resolveDocLink } from "../docs";
+import { docs as handbookDocs, posts, resolveDocLink } from "../docs";
 
-const props = defineProps<{ docId: string }>();
+const props = defineProps<{ docId: string; collection?: "handbook" | "blog" }>();
+const isBlog = computed(() => props.collection === "blog");
+const docs = computed(() => (isBlog.value ? posts : handbookDocs));
+const param = computed(() => (isBlog.value ? "blog" : "doc"));
 const current = computed(
-  () => docs.find((doc) => doc.id === props.docId) || docs[0]!,
+  () => docs.value.find((doc) => doc.id === props.docId) || docs.value[0]!,
 );
 watchEffect(() => {
   document.title = `${current.value.title} · AI Native Engineering`;
@@ -135,10 +138,10 @@ const readingMinutes = computed(() =>
   Math.max(1, Math.ceil(current.value.markdown.length / 450)),
 );
 const currentIndex = computed(() =>
-  docs.findIndex((doc) => doc.id === current.value.id),
+  docs.value.findIndex((doc) => doc.id === current.value.id),
 );
-const nextDoc = computed(() => docs[currentIndex.value + 1]);
-const previousDoc = computed(() => docs[currentIndex.value - 1]);
+const nextDoc = computed(() => docs.value[currentIndex.value + 1]);
+const previousDoc = computed(() => docs.value[currentIndex.value - 1]);
 
 async function copyCode(button: HTMLButtonElement) {
   const code =
@@ -226,7 +229,7 @@ onBeforeUnmount(() => observer?.disconnect());
 <template>
   <div class="handbook-shell">
     <div class="handbook-topline">
-      <a class="back-home" href="/">
+      <a class="back-home" :href="isBlog ? '/?blog' : '/'">
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path
             d="m11.5 5-5 5 5 5M7 10h10"
@@ -234,37 +237,39 @@ onBeforeUnmount(() => observer?.disconnect());
             stroke-width="1.4"
           />
         </svg>
-        返回首页
+        {{ isBlog ? "返回博客列表" : "返回首页" }}
       </a>
-      <span class="edition-label">规范 · 实践 · 协作</span>
+      <span class="edition-label">{{
+        isBlog ? "工程博客" : "规范 · 实践 · 协作"
+      }}</span>
     </div>
 
     <details class="mobile-doc-navigation">
       <summary>
-        <span>文档导航</span
+        <span>{{ isBlog ? "文章导航" : "文档导航" }}</span
         ><span>{{ current.title }} <span aria-hidden="true">⌄</span></span>
       </summary>
-      <nav aria-label="移动端手册导航">
+      <nav :aria-label="isBlog ? '移动端博客导航' : '移动端手册导航'">
         <a
           v-for="doc in docs"
           :key="doc.id"
-          :href="`?doc=${doc.id}`"
+          :href="`?${param}=${doc.id}`"
           :aria-current="doc.id === current.id ? 'page' : undefined"
           >{{ doc.title }}</a
         >
-        <a href="/training/index.html">图文培训版 ↗</a>
+        <a v-if="!isBlog" href="/training/index.html">图文培训版 ↗</a>
       </nav>
     </details>
 
     <div class="handbook-layout">
       <aside class="handbook-sidebar">
         <div class="sidebar-inner">
-          <p class="navigation-label">研发手册</p>
-          <nav aria-label="手册导航">
+          <p class="navigation-label">{{ isBlog ? "工程博客" : "研发手册" }}</p>
+          <nav :aria-label="isBlog ? '博客导航' : '手册导航'">
             <a
               v-for="doc in docs"
               :key="doc.id"
-              :href="`?doc=${doc.id}`"
+              :href="`?${param}=${doc.id}`"
               :aria-current="doc.id === current.id ? 'page' : undefined"
             >
               <span>{{ doc.title }}</span>
@@ -276,7 +281,14 @@ onBeforeUnmount(() => observer?.disconnect());
               >
             </a>
           </nav>
-          <a class="training-link" href="/training/index.html">
+          <a v-if="isBlog" class="training-link" href="/?doc=training">
+            <span class="training-icon" aria-hidden="true">↗</span>
+            <span
+              ><strong>阅读研发手册</strong
+              ><small>文章背后的完整流程与约定</small></span
+            >
+          </a>
+          <a v-else class="training-link" href="/training/index.html">
             <span class="training-icon" aria-hidden="true">↗</span>
             <span
               ><strong>从一次团队培训开始</strong
@@ -294,15 +306,22 @@ onBeforeUnmount(() => observer?.disconnect());
           v-if="props.docId && !docs.some((doc) => doc.id === props.docId)"
           class="document-notice"
         >
-          没有找到该文档，已为你打开方案全文。
+          {{
+            isBlog
+              ? "没有找到这篇文章，已为你打开最新一篇。"
+              : "没有找到该文档，已为你打开方案全文。"
+          }}
         </div>
         <header class="document-header" :id="content.titleId">
           <h1 id="document-heading">{{ current.title }}</h1>
           <p>{{ current.description }}</p>
           <div class="document-meta">
-            <span>约 {{ readingMinutes }} 分钟阅读</span
+            <template v-if="current.date"
+              ><time :datetime="current.date">{{ current.date }}</time
+              ><span class="meta-separator" aria-hidden="true">/</span></template
+            ><span>约 {{ readingMinutes }} 分钟阅读</span
             ><span class="meta-separator" aria-hidden="true">/</span
-            ><span>与项目规范同步</span
+            ><span>{{ isBlog ? "基于仓库真实改动" : "与项目规范同步" }}</span
             ><button type="button" @click="downloadMarkdown">
               下载 Markdown <span aria-hidden="true">↓</span>
             </button>
@@ -330,12 +349,18 @@ onBeforeUnmount(() => observer?.disconnect());
           <span>文档来源</span><code>{{ current.source }}</code>
         </div>
         <nav class="document-pagination" aria-label="相邻文档">
-          <a v-if="previousDoc" :href="`?doc=${previousDoc.id}`"
+          <a v-if="previousDoc" :href="`?${param}=${previousDoc.id}`"
             ><small>← 上一篇</small><strong>{{ previousDoc.title }}</strong></a
           >
           <span v-else></span>
-          <a v-if="nextDoc" :href="`?doc=${nextDoc.id}`" class="next-document"
+          <a
+            v-if="nextDoc"
+            :href="`?${param}=${nextDoc.id}`"
+            class="next-document"
             ><small>下一篇 →</small><strong>{{ nextDoc.title }}</strong></a
+          >
+          <a v-else-if="isBlog" href="/?blog" class="next-document"
+            ><small>继续探索 →</small><strong>查看全部文章</strong></a
           >
           <a v-else href="/" class="next-document"
             ><small>继续探索 →</small><strong>返回项目首页</strong></a

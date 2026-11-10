@@ -12,7 +12,14 @@ import { fullChecks, quickChecks, roles, stages } from "./content";
 const HandbookReader = defineAsyncComponent(
   () => import("./components/HandbookReader.vue"),
 );
-const docId = new URLSearchParams(window.location.search).get("doc");
+const BlogIndex = defineAsyncComponent(
+  () => import("./components/BlogIndex.vue"),
+);
+const params = new URLSearchParams(window.location.search);
+const docId = params.get("doc");
+const blogId = params.get("blog");
+const onHome = !docId && blogId === null;
+const home = onHome ? "" : "/";
 const menuOpen = ref(false);
 const activeStage = ref(0);
 const stage = computed(() => stages[activeStage.value]!);
@@ -21,6 +28,7 @@ const checks = computed(() =>
   gate.value === "quick" ? quickChecks : fullChecks,
 );
 const system = ref<"unix" | "windows">("unix");
+const mode = ref<"sync" | "copy">("sync");
 const projectName = ref("myproject");
 const validName = computed(() =>
   /^[a-z][a-z0-9]{1,19}$/.test(projectName.value),
@@ -28,10 +36,11 @@ const validName = computed(() =>
 const safeProject = computed(() =>
   validName.value ? projectName.value : "myproject",
 );
+const modeFlag = computed(() => (mode.value === "copy" ? " --mode copy" : ""));
 const command = computed(() =>
   system.value === "unix"
-    ? `bin/new-project.sh ~/work/${safeProject.value} -d project_code=${safeProject.value}\ncd ~/work/${safeProject.value}\n./scripts/setup.sh\n./scripts/verify.sh quick`
-    : `bin\\new-project.cmd "%USERPROFILE%\\work\\${safeProject.value}" -d project_code=${safeProject.value}\ncd /d "%USERPROFILE%\\work\\${safeProject.value}"\nscripts\\setup.cmd\nscripts\\verify.cmd quick`,
+    ? `bin/new-project.sh ~/work/${safeProject.value}${modeFlag.value} -d project_code=${safeProject.value}\ncd ~/work/${safeProject.value}\n./scripts/setup.sh\n./scripts/verify.sh quick`
+    : `bin\\new-project.cmd "%USERPROFILE%\\work\\${safeProject.value}"${modeFlag.value} -d project_code=${safeProject.value}\ncd /d "%USERPROFILE%\\work\\${safeProject.value}"\nscripts\\setup.cmd\nscripts\\verify.cmd quick`,
 );
 const copyState = ref("复制命令");
 const copyMessage = ref("");
@@ -124,7 +133,7 @@ function onEscape(event: KeyboardEvent) {
 }
 onMounted(() => {
   document.addEventListener("keydown", onEscape);
-  if (docId) return;
+  if (!onHome) return;
   const motionReduced = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -164,12 +173,15 @@ onBeforeUnmount(() => {
         <span>AI Native<span>Engineering</span></span>
       </a>
       <nav class="desktop-nav" aria-label="主导航">
-        <a :href="docId ? '/#system' : '#system'">工程体系</a>
-        <a :href="docId ? '/#workflow' : '#workflow'">工作流程</a>
-        <a :href="docId ? '/#quality' : '#quality'">质量门禁</a>
+        <a :href="`${home}#system`">工程体系</a>
+        <a :href="`${home}#workflow`">工作流程</a>
+        <a :href="`${home}#quality`">质量门禁</a>
         <a href="/?doc=training">研发手册</a>
+        <a href="/?blog" :aria-current="blogId !== null ? 'page' : undefined"
+          >工程博客</a
+        >
       </nav>
-      <a class="header-cta" :href="docId ? '/#start' : '#start'"
+      <a class="header-cta" :href="`${home}#start`"
         >开始使用 <span aria-hidden="true">↗</span></a
       >
       <button
@@ -191,11 +203,11 @@ onBeforeUnmount(() => {
     >
       <a href="/#system">工程体系</a><a href="/#workflow">工作流程</a
       ><a href="/#quality">质量门禁</a><a href="/?doc=training">研发手册</a
-      ><a href="/#start">开始使用</a>
+      ><a href="/?blog">工程博客</a><a href="/#start">开始使用</a>
     </nav>
   </header>
 
-  <main v-if="!docId" id="main-content">
+  <main v-if="onHome" id="main-content">
     <section class="hero container" aria-labelledby="hero-title">
       <div class="hero-copy">
         <h1 id="hero-title" class="hero-title">
@@ -595,6 +607,21 @@ onBeforeUnmount(() => {
               Windows
             </button>
           </div>
+          <div class="system-tabs mode-tabs" aria-label="选择创建方式">
+            <button :aria-pressed="mode === 'sync'" @click="mode = 'sync'">
+              可持续升级</button
+            ><button :aria-pressed="mode === 'copy'" @click="mode = 'copy'">
+              一次性拷贝
+            </button>
+          </div>
+          <p class="mode-note">
+            {{
+              mode === "sync"
+                ? "默认方式。登记基线的 Git 地址和版本，以后可用 sync-baseline 升级；需要能访问基线远端。"
+                : "离线可用，直接拷贝本机基线目录。项目以后不跟随基线升级。"
+            }}
+            <a href="/?blog=2026-11-10-new-project-two-modes">怎么选</a>
+          </p>
           <div class="project-input">
             <label for="project-name">项目代号</label
             ><input
@@ -634,11 +661,21 @@ onBeforeUnmount(() => {
       </div>
     </section>
   </main>
-  <main v-else id="main-content">
+  <main v-else-if="docId" id="main-content">
     <Suspense
       ><HandbookReader :doc-id="docId" /><template #fallback
         ><div class="document-loading container" role="status">
           正在打开研发手册…
+        </div></template
+      ></Suspense
+    >
+  </main>
+  <main v-else id="main-content">
+    <Suspense
+      ><HandbookReader v-if="blogId" :doc-id="blogId" collection="blog" /><BlogIndex
+        v-else /><template #fallback
+        ><div class="document-loading container" role="status">
+          正在打开工程博客…
         </div></template
       ></Suspense
     >
@@ -660,7 +697,8 @@ onBeforeUnmount(() => {
         <nav aria-label="页脚导航">
           <a href="/?doc=overview">方案全文</a
           ><a href="/?doc=training">团队培训</a
-          ><a href="/?doc=changelog">版本记录</a>
+          ><a href="/?doc=changelog">版本记录</a
+          ><a href="/?blog">工程博客</a>
         </nav>
         <span>元宇宙研发中心</span>
       </div>

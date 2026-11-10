@@ -4,6 +4,7 @@ export interface HandbookDocument {
   description: string;
   source: string;
   markdown: string;
+  date?: string;
 }
 
 const handbookSources = import.meta.glob("../../handbook/*.md", {
@@ -84,6 +85,42 @@ export const docs: HandbookDocument[] = [
   },
 ];
 
+const blogSources = import.meta.glob("../blog/*.md", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+/** Split the leading `key: value` block; posts only use flat string fields. */
+function parseFrontMatter(raw: string): {
+  meta: Record<string, string>;
+  body: string;
+} {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!match) return { meta: {}, body: raw };
+  const meta: Record<string, string> = {};
+  for (const line of match[1]!.split(/\r?\n/)) {
+    const index = line.indexOf(":");
+    if (index > 0) meta[line.slice(0, index).trim()] = line.slice(index + 1).trim();
+  }
+  return { meta, body: raw.slice(match[0].length) };
+}
+
+export const posts: HandbookDocument[] = Object.entries(blogSources)
+  .map(([path, raw]) => {
+    const file = path.split("/").pop()!;
+    const { meta, body } = parseFrontMatter(raw);
+    return {
+      id: file.replace(/\.md$/, ""),
+      title: meta.title || file,
+      description: meta.description || "",
+      date: meta.date || "",
+      source: `website/blog/${file}`,
+      markdown: body,
+    };
+  })
+  .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
 /** Resolve repository-relative Markdown links without depending on a public Git URL. */
 export function resolveDocLink(
   href: string,
@@ -110,6 +147,8 @@ export function resolveDocLink(
   const normalized = parts.join("/");
   const target = docs.find((doc) => doc.source === normalized);
   if (target) return `?doc=${target.id}${hash}`;
+  const post = posts.find((item) => item.source === normalized);
+  if (post) return `?blog=${post.id}${hash}`;
   if (normalized === "handbook/README.md") return "?doc=overview";
   if (normalized.startsWith("handbook/training/")) {
     return `/training/${normalized.slice("handbook/training/".length)}${hash}`;
