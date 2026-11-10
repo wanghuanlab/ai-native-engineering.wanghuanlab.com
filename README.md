@@ -45,7 +45,16 @@ bin/new-project.sh ~/work/park --defaults -d project_code=park -d project_name=�
   -d security_level=restricted -d enable_xinchuang=true -d xinchuang_db=dm -d enable_screen=true
 ```
 
-创建时记录的基线来源是团队可访问的 Git 地址，并固定到标签或提交，不是某台机器上的目录。默认取本仓库 `origin`（会去掉 URL 里的用户名和令牌）；可用 `--source` / 环境变量 `BASELINE_SOURCE` 指定地址，用 `--ref`（或 `--vcs-ref`）/ `BASELINE_REF` 指定标签或提交。没有标签时固定为当前提交的完整哈希，该提交必须已经在远端上。之后在项目里用 `scripts/sync-baseline.sh <版本>`（Windows：`scripts\sync-baseline.cmd`）升级；来源不可达或仍是本机路径时会直接失败，并可用 `--source` 改掉记录的地址。
+### 两种创建方式
+
+| 方式 | 命令 | 网络 | 以后能否 `sync-baseline` |
+| :--- | :--- | :--- | :--- |
+| B：可持续升级（默认） | `bin/new-project.sh <目录>` 或 `--mode sync` | 需要访问基线远端 | 能 |
+| A：一次性拷贝 | `bin/new-project.sh <目录> --mode copy` | 不需要 | 不能 |
+
+方式 A 直接从本机的基线目录生成项目，包含未提交的改动（不传 `--ref` 时取 `HEAD` 的工作区）。它不检查远端，适合离线试用、演示或确定不跟随基线升级的项目。生成的 `.baseline/copier-answers.yml` 带有 `_baseline_mode: copy` 标记，`sync-baseline` 会拒绝执行。以后基线的门禁、规则和插件改动要靠人工合入。正式交给项目组的项目用方式 B。
+
+方式 B 创建时记录的基线来源是团队可访问的 Git 地址，并固定到标签或提交，不是某台机器上的目录。默认取本仓库 `origin`（会去掉 URL 里的用户名和令牌）；可用 `--source` / 环境变量 `BASELINE_SOURCE` 指定地址，用 `--ref`（或 `--vcs-ref`）/ `BASELINE_REF` 指定标签或提交。没有标签时固定为当前提交的完整哈希，该提交必须已经在远端上。之后在项目里用 `scripts/sync-baseline.sh <版本>`（Windows：`scripts\sync-baseline.cmd`）升级；来源不可达或仍是本机路径时会直接失败，并可用 `--source` 改掉记录的地址。
 
 ## 生成的项目包含什么
 

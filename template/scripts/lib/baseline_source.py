@@ -160,6 +160,25 @@ def copier_command() -> list[str]:
     raise SystemExit("未找到 copier。请先安装：pip install copier，或安装 uv 后使用 uvx。")
 
 
+COPY_MODE_LINE = "_baseline_mode: copy"
+
+
+def is_copy_mode(text: str) -> bool:
+    """方式 A（一次性拷贝）创建的项目在 answers 文件里有这个标记，不能同步基线。"""
+    return any(line.strip() == COPY_MODE_LINE for line in text.splitlines())
+
+
+def mark_copy_mode(path: Path) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    newline = "\r\n" if lines and lines[0].endswith("\r\n") else "\n"
+    body = [line for line in lines if not line.startswith("#")]
+    header = [
+        f"# 由基线一次性拷贝生成（方式 A），不跟随基线升级。以下仅记录创建时的来源和答案。{newline}",
+        f"{COPY_MODE_LINE}{newline}",
+    ]
+    path.write_bytes("".join(header + body).encode("utf-8"))
+
+
 def read_src_path(text: str) -> str | None:
     for line in text.splitlines():
         if line.startswith("_src_path:"):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""把基线同步到指定版本。来源必须是团队可访问的 Git 地址。"""
+"""把基线同步到指定版本。来源必须是团队可访问的 Git 地址；一次性拷贝创建的项目不能同步。"""
 from __future__ import annotations
 
 import os
@@ -9,6 +9,7 @@ from pathlib import Path
 
 from lib.baseline_source import (
     copier_command,
+    is_copy_mode,
     reachability_problem,
     read_src_path,
     sanitize_git_url,
@@ -29,6 +30,13 @@ def main(argv: list[str] | None = None) -> int:
     os.chdir(ROOT)
     if not ANSWERS.is_file():
         print(f"✗ 找不到 {ANSWERS.relative_to(ROOT)}，这不是由基线创建的项目。", file=sys.stderr)
+        return 1
+    if is_copy_mode(ANSWERS.read_text(encoding="utf-8")):
+        print(
+            "✗ 本项目以一次性拷贝方式（方式 A）创建，没有固定的基线来源和版本，无法做三方合并。\n"
+            "  需要跟随基线升级的项目，请用 bin/new-project.sh <目录>（方式 B，默认）重新创建，再迁入业务代码。",
+            file=sys.stderr,
+        )
         return 1
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     if status.stdout.strip():

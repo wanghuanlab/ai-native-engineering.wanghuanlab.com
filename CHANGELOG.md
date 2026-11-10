@@ -2,6 +2,7 @@
 
 ## 未发布
 
+- 创建方式：`new-project` 增加 `--mode copy|sync`。默认 `sync`（方式 B，可持续升级），行为不变。`copy`（方式 A，一次性拷贝）从本机基线目录生成项目，不访问远端，可离线使用；项目带 `_baseline_mode: copy` 标记，`sync-baseline` 会拒绝并说明原因。方式 B 因引用未推送而失败时，会提示可改用 `--mode copy`。
 - 插件机制：可选功能以独立 Copier 模板源码注入项目，创建时多选，建好后用 `scripts/plugin.sh` 安装或升级。基线预留权限 SPI、前端插件目录和配置标记。决策见 `handbook/07-插件机制.md`。最小示例插件 `example` 只用于验证机制。
 - 认证插件 `admin`：用户、角色、菜单、部门、岗位、验证码和 JWT 登录。验证码、刷新令牌和注销名单使用 Redis。数据权限用 JPA `Specification`。密码哈希只用 `spring-security-crypto`，不引入完整的 Spring Security。管理端提供登录、动态菜单和五个管理页。`scripts/dev.sh` 启动本地数据库和 Redis，并在后端启动时完成建表和初始管理员。
 - 质量门禁：编码规范拆成风格、工程实践、安全、格式化、静态检查和架构约束。`verify quick` 执行 Spotless、Checkstyle、单元测试和 SpotBugs（含 Find Security Bugs）；`verify full` 另检查 JaCoCo 聚合行覆盖率。SonarQube 仅在 `-Psonar` 且提供服务器时运行。P3C Maven 插件不接入 Java 21 门禁。

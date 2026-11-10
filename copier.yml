@@ -1,6 +1,7 @@
 # ai-native-engineering 项目模板配置
 # 创建项目：bin/new-project.sh <目标目录>（Windows：bin\new-project.cmd）
 # 来源默认是本仓库 origin（去掉凭据），也可用 --source / BASELINE_SOURCE 指定 Git 地址。
+# 离线一次性拷贝（不跟随基线升级）：bin/new-project.sh <目标目录> --mode copy
 # 同步升级：在项目内执行 scripts/sync-baseline.sh <基线版本标签>
 
 _min_copier_version: "9.4.0"

@@ -363,6 +363,33 @@ if classify_source(recorded or "") != "git":
     raise SystemExit(f"同步后来源不是 Git 地址：{recorded}")
 PY
   pass "copier update 从 v0.1.0 升到 v0.2.0，项目自有文件仍在"
+
+  python3 "${BASELINE_DIR}/bin/new_project.py" "${dest}/copied" --mode copy --defaults --quiet \
+    -d project_code=park -d project_name=智慧园区 -d tech_lead=selftest
+  grep -qx '_baseline_mode: copy' "${dest}/copied/.baseline/copier-answers.yml" || die "一次性拷贝没有写下方式标记"
+  git -C "${dest}/copied" config user.name selftest
+  git -C "${dest}/copied" config user.email selftest@example.com
+  git -C "${dest}/copied" add -A
+  git -C "${dest}/copied" commit -q -m "chore(baseline): 初始化项目" -m "Refs: BASELINE-v0.0.0"
+  set +e
+  out="$(python3 "${dest}/copied/scripts/sync_baseline.py" v0.2.0 --source "${src_url}" 2>&1)"
+  status=$?
+  set -e
+  if [ "${status}" -eq 0 ]; then
+    rm -rf "${src}" "${dest}"
+    cd "${start}"
+    die "一次性拷贝的项目不应能同步基线"
+  fi
+  case "${out}" in
+    *一次性拷贝*) ;;
+    *)
+      printf '%s\n' "${out}" >&2
+      rm -rf "${src}" "${dest}"
+      cd "${start}"
+      die "一次性拷贝的项目同步失败时没有说明原因"
+      ;;
+  esac
+  pass "一次性拷贝：不访问远端即可创建，sync-baseline 会拒绝并说明原因"
   rm -rf "${src}" "${dest}"
   cd "${start}"
 }
